@@ -3,8 +3,9 @@
 /**
  * Revert Exclusive Checkouts
  *
- * HTML Window for P4V / P4Admin. Argument: %D (selected files or folders), or
- * open it from the Tools menu and type depot paths. Requires 'admin' access
+ * HTML Window for P4V / P4Admin. Argument: %D or %F (all selected files at
+ * once; %F's workspace paths are converted with 'p4 where'), %r for a folder
+ * in P4Admin, or open it from the Tools menu and type paths. Requires 'admin' access
  * ('p4 revert -C <client>' on another user's workspace needs admin).
  *
  * Finds files opened with the exclusive checkout modifier (+l) by anyone,
@@ -49,9 +50,28 @@
 
     busy = true;
     $("searchButton").disabled = true;
-    Toolkit.setStatus($("searchStatus"), "Searching…", "busy");
     try {
-      const result = await Toolkit.tryRun(["opened", "-a", ...paths]);
+      // %F selections (and typed local paths) arrive in workspace syntax.
+      let depotPaths = paths;
+      let unmapped = [];
+      if (paths.some((p) => !Toolkit.isDepotPath(p))) {
+        Toolkit.setStatus($("searchStatus"), "Converting local paths…", "busy");
+        ({ paths: depotPaths, unmapped } = await Toolkit.toDepotPaths(paths));
+        $("pathInput").value = [...depotPaths, ...unmapped].join("\n");
+        if (unmapped.length) {
+          showOutcome("warning", "Some paths aren't in your workspace view", [
+            "These local paths couldn't be converted to depot paths, so they were skipped. Use depot paths (//...) instead:",
+            ...unmapped,
+          ]);
+        }
+        if (!depotPaths.length) {
+          Toolkit.setStatus($("searchStatus"), "");
+          return;
+        }
+      }
+
+      Toolkit.setStatus($("searchStatus"), "Searching…", "busy");
+      const result = await Toolkit.tryRun(["opened", "-a", ...depotPaths]);
       if (!result.ok && !/not opened/i.test(result.error)) {
         throw new Error(result.error);
       }

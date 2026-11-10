@@ -62,13 +62,18 @@ const Toolkit = (() => {
     return (result && result.data) || [];
   }
 
-  /** Like run(), but never throws: returns { ok, data, error, result }. */
+  /**
+   * Like run(), but never throws: returns { ok, data, error, result }.
+   * On a partial failure (e.g. some files not mapped), `data` still holds
+   * whatever rows the server did return.
+   */
   async function tryRun(args, input) {
     try {
       const data = await run(args, input);
       return { ok: true, data, error: "" };
     } catch (err) {
-      return { ok: false, data: [], error: err.message, result: err.result };
+      const data = (err.result && err.result.data) || [];
+      return { ok: false, data, error: err.message, result: err.result };
     }
   }
 
@@ -170,7 +175,38 @@ const Toolkit = (() => {
     const trimmed = String(path).trim().replace(/[\\/]+$/, "");
     if (!trimmed) return trimmed;
     if (trimmed.endsWith("...") || trimmed.includes("*")) return trimmed;
-    return `${trimmed}/...`;
+    const sep = !trimmed.startsWith("//") && trimmed.includes("\\") ? "\\" : "/";
+    return `${trimmed}${sep}...`;
+  }
+
+  function isDepotPath(path) {
+    return String(path).startsWith("//");
+  }
+
+  /**
+   * Convert local workspace paths (e.g. from a %F selection) to depot paths
+   * using `p4 where`. Depot paths pass through unchanged.
+   * @returns {Promise<{ paths: string[], unmapped: string[] }>}
+   */
+  async function toDepotPaths(paths) {
+    const depot = [];
+    const local = [];
+    for (const path of paths) (isDepotPath(path) ? depot : local).push(path);
+    if (!local.length) return { paths: depot, unmapped: [] };
+
+    const result = await tryRun(["where", ...local]);
+    const mapped = result.data.filter((row) => row.depotFile && !row.unmap);
+    const mappedLocal = new Set(
+      mapped.map((row) => String(row.path || "").toLowerCase())
+    );
+    const unmapped = local.filter(
+      (path) => !mappedLocal.has(String(path).toLowerCase())
+    );
+    for (const row of mapped) {
+      if (!depot.includes(row.depotFile)) depot.push(row.depotFile);
+    }
+    // If p4 where returned nothing usable, report every local path as unmapped.
+    return { paths: depot, unmapped: mapped.length ? unmapped : local };
   }
 
   /** First non-empty value among P4V's injected page parameters. */
@@ -346,6 +382,8 @@ const Toolkit = (() => {
     currentUser,
     selectedPaths,
     toFolderWildcard,
+    isDepotPath,
+    toDepotPaths,
     param,
     securityLevel,
     applyTheme,

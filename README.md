@@ -9,7 +9,7 @@ Work in progress.
 | Tool | Type | Argument | Who can use it |
 |---|---|---|---|
 | [Reset User Password](site/tools/reset-password/) | HTML Window | `%u` (user) | Super users |
-| [Revert Exclusive Checkouts](site/tools/revert-exclusive-checkouts/) | HTML Window | `%D` (files or folders) | Admins and super users |
+| [Revert Exclusive Checkouts](site/tools/revert-exclusive-checkouts/) | HTML Window | `%D` or `%F` (all selected files) | Admins and super users |
 | [Typemap Editor](site/tools/typemap/) | HTML Tab | none | Admins and super users |
 | [AI Help](site/tools/ai-help/) | HTML Tab | none | Everyone |
 
