@@ -1,0 +1,432 @@
+/* Shared component styles for Ultimate P4V Toolkit tools.
+   Loaded after style.css / darkstyle.css. Light theme is the default;
+   body.dark-theme (set from p4vjs.useDarkTheme()) switches the palette. */
+
+.tk-app {
+  --tk-text: #3a3a3a;
+  --tk-muted: #6e6e6e;
+  --tk-surface: #ffffff;
+  --tk-surface-alt: #f7f9fc;
+  --tk-border: #c9ced6;
+  --tk-accent: #0b6fc4;
+  --tk-accent-text: #ffffff;
+  --tk-danger: #b42318;
+  --tk-danger-text: #ffffff;
+  --tk-row-hover: #eef4fb;
+  --tk-info-bg: #e8f1fb;
+  --tk-info-border: #9cc3ea;
+  --tk-success-bg: #e7f5ea;
+  --tk-success-border: #8fcf9c;
+  --tk-success-text: #1e5b2a;
+  --tk-warning-bg: #fff6dd;
+  --tk-warning-border: #e8c76a;
+  --tk-warning-text: #6b4e00;
+  --tk-error-bg: #fdecea;
+  --tk-error-border: #eba49c;
+  --tk-error-text: #8a1c12;
+  --tk-code-bg: #eef1f5;
+
+  color: var(--tk-text);
+  padding: 0.75rem 1rem 1rem;
+  max-width: 72rem;
+  font-family: helvetica, arial, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+body.dark-theme .tk-app {
+  --tk-text: #f1f4f9;
+  --tk-muted: #b4b9c2;
+  --tk-surface: #2c2c2c;
+  --tk-surface-alt: #323232;
+  --tk-border: #5a5a5a;
+  --tk-accent: #3d97e6;
+  --tk-accent-text: #ffffff;
+  --tk-danger: #e5544a;
+  --tk-danger-text: #ffffff;
+  --tk-row-hover: #3a4350;
+  --tk-info-bg: #1f2f40;
+  --tk-info-border: #3b5f86;
+  --tk-success-bg: #1e3a24;
+  --tk-success-border: #3f7a4b;
+  --tk-success-text: #a6e3b2;
+  --tk-warning-bg: #3d3420;
+  --tk-warning-border: #7d6630;
+  --tk-warning-text: #f3d98a;
+  --tk-error-bg: #44201d;
+  --tk-error-border: #8a3a33;
+  --tk-error-text: #ffb8b0;
+  --tk-code-bg: #383838;
+}
+
+/* The base theme files put margin/padding on every element; reset inside tools. */
+.tk-app,
+.tk-app * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.tk-app * {
+  font-family: inherit;
+}
+
+.tk-app {
+  padding: 0.75rem 1rem 1rem;
+}
+
+.tk-app [hidden] {
+  display: none !important;
+}
+
+.tk-header {
+  margin-bottom: 1rem;
+}
+
+.tk-header h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.tk-header p {
+  color: var(--tk-muted);
+}
+
+.tk-section {
+  margin-bottom: 1rem;
+}
+
+.tk-card {
+  background: var(--tk-surface);
+  border: 1px solid var(--tk-border);
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.tk-card h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+.tk-muted {
+  color: var(--tk-muted);
+}
+
+.tk-mono,
+.tk-app code {
+  font-family: Consolas, "SF Mono", Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.tk-app code {
+  background: var(--tk-code-bg);
+  border-radius: 3px;
+  padding: 0.05rem 0.3rem;
+}
+
+/* ---------- Form controls ---------- */
+
+.tk-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tk-row + .tk-row {
+  margin-top: 0.6rem;
+}
+
+.tk-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 14rem;
+  flex: 1;
+}
+
+.tk-field label {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.tk-app input[type="text"],
+.tk-app input[type="search"],
+.tk-app textarea,
+.tk-app select {
+  background: var(--tk-surface);
+  color: var(--tk-text);
+  border: 1px solid var(--tk-border);
+  border-radius: 4px;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.95rem;
+}
+
+.tk-app textarea {
+  resize: vertical;
+  min-height: 3.5rem;
+  width: 100%;
+}
+
+.tk-app input:focus-visible,
+.tk-app textarea:focus-visible,
+.tk-app select:focus-visible,
+.tk-app button:focus-visible {
+  outline: 2px solid var(--tk-accent);
+  outline-offset: 1px;
+}
+
+.tk-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.tk-app input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--tk-accent);
+  cursor: pointer;
+}
+
+/* ---------- Buttons ---------- */
+
+.tk-btn {
+  background: var(--tk-surface);
+  color: var(--tk-text);
+  border: 1px solid var(--tk-border);
+  border-radius: 4px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tk-btn:hover:not(:disabled) {
+  border-color: var(--tk-accent);
+}
+
+.tk-btn-primary {
+  background: var(--tk-accent);
+  border-color: var(--tk-accent);
+  color: var(--tk-accent-text);
+}
+
+.tk-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.tk-btn-danger {
+  background: var(--tk-danger);
+  border-color: var(--tk-danger);
+  color: var(--tk-danger-text);
+}
+
+.tk-btn-danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+  border-color: var(--tk-danger);
+}
+
+.tk-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tk-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 0.85rem;
+}
+
+.tk-spacer {
+  flex: 1;
+}
+
+/* ---------- Notices ---------- */
+
+.tk-notice {
+  border: 1px solid var(--tk-info-border);
+  background: var(--tk-info-bg);
+  border-radius: 6px;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.tk-notice p + p,
+.tk-notice-title + p {
+  margin-top: 0.3rem;
+}
+
+.tk-notice-title {
+  display: block;
+  font-weight: 600;
+}
+
+.tk-notice-success {
+  background: var(--tk-success-bg);
+  border-color: var(--tk-success-border);
+  color: var(--tk-success-text);
+}
+
+.tk-notice-warning {
+  background: var(--tk-warning-bg);
+  border-color: var(--tk-warning-border);
+  color: var(--tk-warning-text);
+}
+
+.tk-notice-error,
+.tk-notice-denied {
+  background: var(--tk-error-bg);
+  border-color: var(--tk-error-border);
+  color: var(--tk-error-text);
+}
+
+.tk-notice-denied {
+  padding: 1rem 1.1rem;
+}
+
+.tk-notice-denied .tk-notice-title::before {
+  content: "\1F512  ";
+}
+
+/* ---------- Status line ---------- */
+
+.tk-status {
+  color: var(--tk-muted);
+  font-size: 0.9rem;
+}
+
+.tk-status-success {
+  color: var(--tk-success-text);
+}
+
+.tk-status-error {
+  color: var(--tk-error-text);
+}
+
+.tk-status-busy::before {
+  content: "";
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  margin-right: 0.4em;
+  vertical-align: -0.1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: tk-spin 0.8s linear infinite;
+}
+
+@keyframes tk-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Tables ---------- */
+
+.tk-table-wrap {
+  border: 1px solid var(--tk-border);
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 55vh;
+}
+
+.tk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.tk-table th,
+.tk-table td {
+  border: none;
+  border-bottom: 1px solid var(--tk-border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+  font-size: inherit;
+}
+
+.tk-table th {
+  position: sticky;
+  top: 0;
+  background: var(--tk-surface-alt);
+  font-weight: 600;
+  z-index: 1;
+}
+
+.tk-table tbody tr:hover {
+  background: var(--tk-row-hover);
+}
+
+.tk-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tk-table .tk-col-check {
+  width: 2.25rem;
+  text-align: center;
+}
+
+.tk-table td.tk-path {
+  word-break: break-all;
+}
+
+.tk-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--tk-border);
+  color: var(--tk-muted);
+  white-space: nowrap;
+}
+
+.tk-tag-you {
+  border-color: var(--tk-accent);
+  color: var(--tk-accent);
+}
+
+/* ---------- Key/value details ---------- */
+
+.tk-details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.3rem 1rem;
+}
+
+.tk-details dt {
+  color: var(--tk-muted);
+}
+
+.tk-details dd {
+  word-break: break-word;
+}
+
+/* ---------- Secret / copy box ---------- */
+
+.tk-secret {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--tk-code-bg);
+  border: 1px solid var(--tk-border);
+  border-radius: 6px;
+  padding: 0.55rem 0.75rem;
+}
+
+.tk-secret-value {
+  font-family: Consolas, "SF Mono", Menlo, monospace;
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+  flex: 1;
+  user-select: all;
+  word-break: break-all;
+}

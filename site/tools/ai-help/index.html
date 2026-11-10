@@ -1,0 +1,145 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="P4 Documentation">
+  <link rel="shortcut icon" href="./assets/favicon.ico" type="image/vnd.microsoft.icon">
+  <script type="text/javascript">
+    var darktheme = p4vjs.useDarkTheme();
+    if (darktheme) {
+      document.write('<link rel="stylesheet" type="text/css" href="./assets/darkstyles.css" />');
+    }
+    else {
+      document.write('<link rel="stylesheet" type="text/css" href="./assets/styles.css" />');
+    }
+  </script>
+  <link rel="stylesheet" type="text/css" href="./assets/fonts.css">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+    integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+  <!-- Serenity AI JS -->
+  <script type="module" crossorigin src="./assets/widget.js?t=2025-06-26T07:41:43.982450"></script>
+  <!-- End Serenity AI JS -->
+
+  <title>P4 Documentation | P4 Help</title>
+</head>
+
+<body>
+
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css"
+    integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+
+  </style>
+  <!-- End Serenity Style -->
+
+  <!-- Start Main Content -->
+  <main role="main">
+    <div class="header">
+      <div class="container">
+        <div class="header-content row">
+          <div class="col-md-8">
+            <h1>Documentation AI Search</h1>
+          </div>
+          <div class="col-md-4">
+            <img class="product-logo" src="./assets/logo.svg" alt="P4">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="serenity"></div>
+
+    <script>
+      var SERENITY_WIDGET = {
+        el: 'serenity',
+        api_url: 'https://supportai.perforce.com/v2/',
+        api_token: 'helix_core_ppLhBUmagS',
+        popup: false,
+        automount: true,
+        labels: {
+          POPUP_TITLE: 'Perforce Search',
+          DOCUMENTS_IN: 'Sources:',
+          DOCUMENTS_OTHER: 'Learn more:',
+        },
+        logo_url: './assets/favicon.ico',
+        default_filters: { product: ['Helix Core'] }
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        document.querySelector('#ai-search-box').addEventListener('click', window.mountSerenityWidget)
+      })
+
+    </script>
+
+    <!-- Start SubNav -->
+    <div class="container">
+      <p>Or, click on a product name below to go to the online documentation for that product.</p>
+    </div>
+    <nav class="navbar navbar-expand-lg subnav">
+      <a class="navbar-toggler navbar-brand" data-toggle="collapse" data-target="#navbarNavAltMarkup"
+        aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation"><span
+          class="text-wrap"><span class="text-wrap-inner"></span></span>
+        <i class="fa fa-chevron-down" aria-hidden="true"></i>
+      </a>
+      <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+        <div class="container">
+
+          <div class="navbar-nav">
+            <a href="https://help.perforce.com/helix-core/index.html" target="_blank"><span class="text-wrap"><span
+                  class="text-wrap-inner">P4</span></span></a>
+            <a href="https://help.perforce.com/helix-core/landing/p4-one/index.html" target="_blank"><span
+                class="text-wrap"><span class="text-wrap-inner">P4
+                  One</span></span></a>
+            <a href="https://help.perforce.com/helix-core/landing/helix-dam/index.html" target="_blank"><span
+                class="text-wrap"><span class="text-wrap-inner">P4
+                  DAM</span></span></a>
+            <a href="https://help.perforce.com/helix-core/landing/helix-swarm/index.html" target="_blank"><span
+                class="text-wrap"><span class="text-wrap-inner">P4 Code
+                  Review</span></span></a>
+            <a href="https://help.perforce.com/hansoft/" target="_blank"><span class="text-wrap"><span
+                  class="text-wrap-inner">P4 Plan</span></span></a>
+            <a href="https://help.perforce.com/helix-core/landing/helix-teamhub/index.html" target="_blank"><span
+                class="text-wrap"><span class="text-wrap-inner">TeamHub</span></span></a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <!-- End SubNav -->
+
+
+    <!-- Start Footer -->
+    <footer class="footer" id="footerSection">
+      <div class="container">
+        <p>©
+          <script>document.write(new Date().getFullYear())</script> Perforce Software, Inc. All rights reserved. <a
+            target="_blank" href="https://www.perforce.com/terms-use">Terms of Use</a>&nbsp; |&nbsp;&nbsp;<a
+            target="_blank" href="https://www.perforce.com/privacy-policy">Privacy Policy</a>
+        </p>
+        <div class="social-icons">
+          <a target="_blank" href="https://www.facebook.com/Perforce/"><i class="fab fa-facebook"></i></a>
+          <a target="_blank" href="https://www.linkedin.com/company/perforce/"><i class="fab fa-linkedin"></i></a>
+          <a target="_blank" href="https://twitter.com/perforce"><i class="fab fa-x-twitter"></i></a>
+          <a target="_blank" href="https://www.youtube.com/user/perforcesoftware"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+    </footer>
+    <!-- End Footer -->
+    <!-- Start Required JS scripts jQuery, Popper.js & Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+      integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+      crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+      integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+      crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+      integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+      crossorigin="anonymous"></script>
+    <!-- End Required JS scripts jQuery, Popper.js & Bootstrap JS -->
+
+</body>
+
+</html>

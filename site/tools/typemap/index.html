@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>P4 Typemap Editor</title>
+    <script type="text/javascript">
+      var darktheme = p4vjs.useDarkTheme();
+      if (darktheme) {
+        document.write(
+          '<link rel="stylesheet" type="text/css" href="../../shared/darkstyle.css" />'
+        );
+      } else {
+        document.write(
+          '<link rel="stylesheet" type="text/css" href="../../shared/style.css" />'
+        );
+      }
+    </script>
+    <link rel="stylesheet" type="text/css" href="../../shared/toolkit.css" />
+    <link rel="stylesheet" type="text/css" href="p4typemaptool.css" />
+    <script type="text/javascript" src="../../shared/toolkit.js"></script>
+    <script type="text/javascript" src="../../shared/p4-utilities.js"></script>
+    <script type="text/javascript" src="template-config.js"></script>
+    <script type="text/javascript" src="p4typemaptool.js"></script>
+  </head>
+  <body onload="initializeTypemapEditor()">
+    <div id="accessNotice" class="tk-app" hidden></div>
+    <div class="typemap-container">
+      <header>
+        <h2>P4 Typemap Editor</h2>
+        <p>
+          Configure file type mappings for your Perforce server. Rules are
+          evaluated in order - later rules override earlier ones.
+        </p>
+      </header>
+
+      <div class="toolbar">
+        <button onclick="addNewRule()" class="btn primary">Add Rule</button>
+        <button onclick="saveTypemap()" class="btn primary">Save</button>
+        <button onclick="loadTypemap()" class="btn">Revert/Reload</button>
+
+        <div class="template-section">
+          <label for="templateSelect">Add Template:</label>
+          <select id="templateSelect" onchange="onTemplateSelected()">
+            <option value="">Select a template...</option>
+          </select>
+          <button
+            onclick="loadSelectedTemplate()"
+            class="btn"
+            id="loadTemplateBtn"
+            disabled
+          >
+            Load Template
+          </button>
+        </div>
+
+        <span id="statusMessageTop" class="status-message">Ready</span>
+      </div>
+
+      <div id="loadingIndicator" class="loading">Loading typemap...</div>
+
+      <table id="typemapTable" class="typemap-table" style="display: none">
+        <thead>
+          <tr>
+            <th class="priority-cell sortable" onclick="sortByColumn('order')">
+              Order
+              <div
+                class="column-resizer"
+                onmousedown="startColumnResize(event, 0)"
+              ></div>
+            </th>
+            <th class="sortable" onclick="sortByColumn('type')">
+              File Type
+              <div
+                class="column-resizer"
+                onmousedown="startColumnResize(event, 1)"
+              ></div>
+            </th>
+            <th class="sortable" onclick="sortByColumn('pattern')">
+              Depot Path Pattern
+              <div
+                class="column-resizer"
+                onmousedown="startColumnResize(event, 2)"
+              ></div>
+            </th>
+            <th class="sortable" onclick="sortByColumn('comment')">
+              Comment
+              <div
+                class="column-resizer"
+                onmousedown="startColumnResize(event, 3)"
+              ></div>
+            </th>
+            <th class="actions-cell">Delete</th>
+          </tr>
+        </thead>
+        <tbody id="typemapTableBody">
+          <!-- Rules will be populated here -->
+        </tbody>
+      </table>
+
+      <div class="toolbar">
+        <button onclick="addNewRule()" class="btn primary">Add Rule</button>
+        <button onclick="saveTypemap()" class="btn primary">Save</button>
+        <button onclick="loadTypemap()" class="btn">Revert/Reload</button>
+        <span id="statusMessageBottom" class="status-message">Ready</span>
+      </div>
+
+      <div class="status-bar">
+        <span id="ruleCount"></span>
+      </div>
+    </div>
+
+    <!-- Hidden template for template results modal -->
+    <div id="templateResultsModalTemplate" style="display: none">
+      <div class="editor-overlay" onclick="closeTemplateResultsModal()"></div>
+      <div class="template-results-modal">
+        <div class="modal-header">
+          <h3 id="templateResultsTitle">Template Loading Results</h3>
+          <button
+            onclick="closeTemplateResultsModal()"
+            class="btn close-btn"
+            title="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-content" id="templateResultsContent">
+          <!-- Content will be populated by JavaScript -->
+        </div>
+        <div class="modal-footer">
+          <button onclick="closeTemplateResultsModal()" class="btn primary">
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden template for file type editor -->
+    <div id="fileTypeEditorTemplate" style="display: none">
+      <div class="file-type-editor">
+        <div style="margin-bottom: 0rem; margin-top: 0rem">
+          <label for="depotPathPattern">Depot Path Pattern:</label>
+          <input
+            type="text"
+            id="depotPathPattern"
+            style="
+              width: calc(100% - 1rem);
+              padding: 0.3125rem;
+              font-size: 1rem;
+              font-family: monospace;
+            "
+            placeholder="//depot/path/..."
+            onchange="updateDepotPathPattern()"
+            oninput="validateDepotPathPattern()"
+          />
+          <div class="help-text" id="depotPathHelp">
+            Specify the depot path pattern this rule applies to (e.g.,
+            //....cpp)
+          </div>
+          <div id="depotPathWarnings"></div>
+        </div>
+
+        <div style="margin-bottom: 0rem; margin-top: 0rem">
+          <label for="baseFileType">Base File Type:</label>
+          <select
+            id="baseFileType"
+            style="width: 100%; padding: 0.3125rem"
+            onchange="updateFileTypePreview()"
+          >
+            <option value="binary">
+              Binary - Binary file (images, executables, etc.)
+            </option>
+            <option value="text">Text - Text file</option>
+            <option value="symlink">
+              Symbolic Link - Unix/Mac symbolic link
+            </option>
+            <option value="unicode">Unicode - Unicode text file</option>
+            <option value="utf8">UTF-8 - Unicode file with BOM</option>
+            <option value="utf16">UTF-16 - Unicode file</option>
+          </select>
+          <div class="help-text" id="fileTypeHelp"></div>
+        </div>
+
+        <div class="modifier-category">
+          <h4>Permissions & Access</h4>
+          <label
+            ><input
+              type="checkbox"
+              value="w"
+              onchange="updateFileTypePreview()"
+            />
+            Always Writable (+w) - File is always writable on client</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              value="x"
+              onchange="updateFileTypePreview()"
+            />
+            Executable (+x) - Execute bit set on client</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              value="l"
+              onchange="updateFileTypePreview()"
+            />
+            Exclusive Lock (+l) - Only one user can edit at a time</label
+          >
+        </div>
+
+        <div class="modifier-category">
+          <h4>Keyword Expansion</h4>
+          <label
+            ><input
+              type="checkbox"
+              value="k"
+              onchange="updateFileTypePreview()"
+            />
+            RCS Keywords (+k) - Expands $Id$, $Date$, $Author$, etc.</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              value="ko"
+              onchange="updateFileTypePreview()"
+            />
+            Limited Keywords (+ko) - Only expands $Id$ and $Header$</label
+          >
+        </div>
+
+        <div class="modifier-category">
+          <h4>Storage Options</h4>
+          <label
+            ><input
+              type="checkbox"
+              value="C"
+              onchange="updateFileTypePreview()"
+            />
+            Compressed Storage (+C) - Full compressed version per
+            revision</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              value="D"
+              onchange="updateFileTypePreview()"
+            />
+            Delta Storage (+D) - Store deltas in RCS format</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              value="F"
+              onchange="updateFileTypePreview()"
+            />
+            Full Uncompressed (+F) - Full file per revision, uncompressed</label
+          >
+          <div
+            style="display: flex; align-items: center; margin-bottom: 0.3125rem"
+          >
+            <input
+              type="checkbox"
+              id="sModifierCheckbox"
+              onchange="updateFileTypePreview()"
+            />
+            <label for="sModifierCheckbox" style="margin-right: 0.5rem"
+              >Limited Revisions (+S)</label
+            >
+            <input
+              type="number"
+              id="sModifierValue"
+              min="1"
+              max="999"
+              placeholder="1"
+              style="
+                width: 3.75rem;
+                padding: 0.125rem;
+                margin: 0;
+                font-size: 1rem;
+              "
+              onchange="updateFileTypePreview()"
+              oninput="updateFileTypePreview()"
+            />
+            <span style="margin-left: 0.3125rem; font-size: 1rem; opacity: 0.7"
+              >revisions (leave empty for head only)</span
+            >
+          </div>
+        </div>
+
+        <div class="modifier-category">
+          <h4>Special Options</h4>
+          <label
+            ><input
+              type="checkbox"
+              value="m"
+              onchange="updateFileTypePreview()"
+            />
+            Preserve Modtime (+m) - Keep original file modification time</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              value="X"
+              onchange="updateFileTypePreview()"
+            />
+            Archive Trigger (+X) - Requires archive trigger to access</label
+          >
+        </div>
+
+        <div class="result-preview">
+          <strong>Resulting File Type:</strong>
+          <code id="resultingType">binary</code>
+        </div>
+
+        <div id="validationWarnings"></div>
+
+        <div style="margin-top: 0.2rem; text-align: right">
+          <button onclick="cancelFileTypeEdit()" class="btn">Cancel</button>
+          <button onclick="applyFileTypeEdit()" class="btn primary">
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
