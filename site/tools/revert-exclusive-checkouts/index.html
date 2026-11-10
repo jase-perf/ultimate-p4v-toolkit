@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Revert Exclusive Checkouts</title>
+    <script type="text/javascript">
+      var darktheme =
+        typeof p4vjs !== "undefined" && p4vjs.useDarkTheme && p4vjs.useDarkTheme();
+      document.write(
+        '<link rel="stylesheet" type="text/css" href="../../shared/' +
+          (darktheme ? "darkstyle.css" : "style.css") +
+          '" />'
+      );
+    </script>
+    <link rel="stylesheet" type="text/css" href="../../shared/toolkit.css" />
+    <link rel="stylesheet" type="text/css" href="revert-exclusive-checkouts.css" />
+    <script type="text/javascript" src="../../shared/toolkit.js"></script>
+    <script type="text/javascript" src="revert-exclusive-checkouts.js"></script>
+  </head>
+  <body>
+    <main class="tk-app">
+      <header class="tk-header">
+        <h1>Revert Exclusive Checkouts</h1>
+        <p>
+          Files with the exclusive checkout modifier (<code>+l</code>) can only
+          be checked out by one person at a time. When someone leaves a file
+          checked out and isn't around to release it, revert their checkout
+          here so the rest of the team can get back to work.
+        </p>
+      </header>
+
+      <div id="notice" hidden></div>
+
+      <section id="main" hidden>
+        <div class="tk-card">
+          <h2>Where to look</h2>
+          <form id="pathForm">
+            <div class="tk-field">
+              <label for="pathInput">Depot paths (one per line)</label>
+              <textarea
+                id="pathInput"
+                rows="3"
+                spellcheck="false"
+                placeholder="//depot/main/...&#10;//depot/main/Content/Hero.uasset"
+              ></textarea>
+            </div>
+            <div class="tk-actions">
+              <button type="submit" id="searchButton" class="tk-btn tk-btn-primary">
+                Find exclusive checkouts
+              </button>
+              <span id="searchStatus" class="tk-status"></span>
+            </div>
+          </form>
+        </div>
+
+        <div id="outcome" hidden></div>
+
+        <div id="resultsCard" class="tk-card" hidden>
+          <div class="tk-row results-head">
+            <h2 id="resultsTitle">Exclusive checkouts</h2>
+            <span class="tk-spacer"></span>
+            <input
+              type="search"
+              id="filterInput"
+              placeholder="Filter by file, user, or workspace"
+              aria-label="Filter results"
+            />
+          </div>
+          <p id="resultsSummary" class="tk-muted results-summary"></p>
+
+          <div id="resultsEmpty" hidden></div>
+
+          <div id="resultsTableWrap" class="tk-table-wrap">
+            <table class="tk-table">
+              <thead>
+                <tr>
+                  <th class="tk-col-check">
+                    <input type="checkbox" id="selectAll" aria-label="Select all visible" />
+                  </th>
+                  <th>File</th>
+                  <th>Checked out by</th>
+                  <th>Workspace</th>
+                  <th>Change</th>
+                </tr>
+              </thead>
+              <tbody id="resultsBody"></tbody>
+            </table>
+          </div>
+
+          <div id="confirmPanel" class="confirm-panel" hidden>
+            <p id="confirmText"></p>
+            <p class="confirm-detail">
+              Their local copies aren't touched, but any changes they made to
+              these files stop being tracked by Perforce. Let them know before
+              they lose work.
+            </p>
+            <div class="tk-actions">
+              <button type="button" id="confirmRevert" class="tk-btn tk-btn-danger">
+                Yes, revert checkouts
+              </button>
+              <button type="button" id="cancelRevert" class="tk-btn">Cancel</button>
+            </div>
+          </div>
+
+          <div id="revertActions" class="tk-actions">
+            <button type="button" id="revertButton" class="tk-btn tk-btn-danger" disabled>
+              Revert selected…
+            </button>
+            <span id="revertStatus" class="tk-status"></span>
+            <span class="tk-spacer"></span>
+            <button type="button" id="refreshButton" class="tk-btn">Refresh list</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

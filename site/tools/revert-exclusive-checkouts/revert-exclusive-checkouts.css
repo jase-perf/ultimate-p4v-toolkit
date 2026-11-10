@@ -1,0 +1,58 @@
+.results-head h2 {
+  margin-bottom: 0;
+}
+
+.results-head input[type="search"] {
+  min-width: 16rem;
+}
+
+.results-summary {
+  margin: 0.4rem 0 0.75rem;
+}
+
+.file-name {
+  font-weight: 600;
+}
+
+.file-dir {
+  display: block;
+  color: var(--tk-muted);
+  font-size: 0.85em;
+  word-break: break-all;
+}
+
+.cell-sub {
+  display: block;
+  color: var(--tk-muted);
+  font-size: 0.85em;
+}
+
+.cell-sub.stale {
+  color: var(--tk-warning-text);
+}
+
+.confirm-panel {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--tk-error-border);
+  background: var(--tk-error-bg);
+  color: var(--tk-error-text);
+  border-radius: 6px;
+}
+
+.confirm-detail {
+  margin-top: 0.35rem;
+  font-size: 0.9em;
+}
+
+.confirm-panel .tk-actions {
+  margin-top: 0.6rem;
+}
+
+#outcome .tk-notice ul {
+  margin: 0.4rem 0 0 1.2rem;
+}
+
+#outcome .tk-notice li {
+  word-break: break-all;
+}

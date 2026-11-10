@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Reset User Password</title>
+    <script type="text/javascript">
+      var darktheme =
+        typeof p4vjs !== "undefined" && p4vjs.useDarkTheme && p4vjs.useDarkTheme();
+      document.write(
+        '<link rel="stylesheet" type="text/css" href="../../shared/' +
+          (darktheme ? "darkstyle.css" : "style.css") +
+          '" />'
+      );
+    </script>
+    <link rel="stylesheet" type="text/css" href="../../shared/toolkit.css" />
+    <link rel="stylesheet" type="text/css" href="reset-password.css" />
+    <script type="text/javascript" src="../../shared/toolkit.js"></script>
+    <script type="text/javascript" src="reset-password.js"></script>
+  </head>
+  <body>
+    <main class="tk-app">
+      <header class="tk-header">
+        <h1>Reset User Password</h1>
+        <p>
+          Give a user a new temporary password, and optionally require them to
+          choose their own the next time they log in.
+        </p>
+      </header>
+
+      <div id="notice" hidden></div>
+
+      <section id="main" hidden>
+        <div class="tk-card">
+          <h2>User</h2>
+
+          <form id="userPicker" class="tk-row" hidden>
+            <div class="tk-field">
+              <label for="userInput">Username</label>
+              <input
+                type="text"
+                id="userInput"
+                list="userList"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="Start typing a username"
+              />
+              <datalist id="userList"></datalist>
+            </div>
+            <button type="submit" class="tk-btn picker-load">Look up</button>
+          </form>
+
+          <p id="userStatus" class="tk-status"></p>
+
+          <dl id="userDetails" class="tk-details" hidden></dl>
+          <div id="userWarning" hidden></div>
+        </div>
+
+        <div id="resetCard" class="tk-card" hidden>
+          <h2>Reset</h2>
+          <label class="tk-check">
+            <input type="checkbox" id="forceChange" checked />
+            Require the user to choose a new password at next login
+          </label>
+
+          <div id="confirmPanel" class="confirm-panel" hidden>
+            <p>
+              Reset the password for <strong id="confirmUser"></strong>? Their
+              current password stops working immediately.
+            </p>
+            <div class="tk-actions">
+              <button type="button" id="confirmReset" class="tk-btn tk-btn-danger">
+                Yes, reset password
+              </button>
+              <button type="button" id="cancelReset" class="tk-btn">Cancel</button>
+            </div>
+          </div>
+
+          <div id="resetActions" class="tk-actions">
+            <button type="button" id="resetButton" class="tk-btn tk-btn-danger">
+              Reset password…
+            </button>
+            <span id="resetStatus" class="tk-status"></span>
+          </div>
+        </div>
+
+        <div id="resultCard" class="tk-card" hidden>
+          <h2>New password</h2>
+          <p class="tk-muted result-intro">
+            Send this to <strong id="resultUser"></strong>. It's shown only once
+            and isn't stored anywhere.
+          </p>
+          <div class="tk-secret">
+            <span id="resultPassword" class="tk-secret-value"></span>
+            <button type="button" id="copyPassword" class="tk-btn">Copy</button>
+          </div>
+          <p id="resultForceNote" class="tk-muted result-note"></p>
+
+          <div class="message-box">
+            <label for="userMessage">Message to send them</label>
+            <textarea id="userMessage" rows="7" readonly></textarea>
+          </div>
+
+          <div class="tk-actions">
+            <button type="button" id="copyMessage" class="tk-btn tk-btn-primary">
+              Copy message
+            </button>
+            <span id="copyStatus" class="tk-status"></span>
+            <span class="tk-spacer"></span>
+            <button type="button" id="resetAnother" class="tk-btn">Reset another user</button>
+            <button type="button" id="doneButton" class="tk-btn">Done</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
