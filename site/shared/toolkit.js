@@ -54,6 +54,12 @@ const Toolkit = (() => {
         "This page must be opened from P4V or P4Admin (p4vjs is not available)."
       );
     }
+    // Never send a command with a missing value; the server would reply with a
+    // confusing usage error (and P4V may pop it up in a dialog).
+    if (args.some((arg) => arg === undefined || arg === null || arg === "")) {
+      console.error("Refusing to run p4 with an empty argument:", args);
+      throw new P4Error(`Internal error: missing a value for 'p4 ${args[0]}'.`);
+    }
     const result =
       input === undefined ? await p4vjs.p4(args) : await p4vjs.p4(args, input);
     if (result && result.error) {
@@ -94,6 +100,30 @@ const Toolkit = (() => {
     } catch (err) {
       return "";
     }
+  }
+
+  function currentClient() {
+    try {
+      return inP4V() && typeof p4vjs.getClient === "function" ? p4vjs.getClient() || "" : "";
+    } catch (err) {
+      return "";
+    }
+  }
+
+  /**
+   * Read a field from a server result row without depending on exact
+   * capitalization ("client" vs "Client"). Returns "" when absent.
+   */
+  function field(row, name) {
+    if (!row || typeof row !== "object") return "";
+    if (row[name] !== undefined && row[name] !== null) return String(row[name]);
+    const lower = name.toLowerCase();
+    for (const key of Object.keys(row)) {
+      if (key.toLowerCase() === lower && row[key] !== undefined && row[key] !== null) {
+        return String(row[key]);
+      }
+    }
+    return "";
   }
 
   /**
@@ -409,6 +439,8 @@ const Toolkit = (() => {
     hasAtLeast: (access, level) => rank(access) >= rank(level),
     requireAccess,
     currentUser,
+    currentClient,
+    field,
     selectedPaths,
     toFolderWildcard,
     isDepotPath,

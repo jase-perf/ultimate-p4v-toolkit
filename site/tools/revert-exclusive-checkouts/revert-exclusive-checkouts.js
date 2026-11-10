@@ -40,6 +40,98 @@
     return /\+\w*l/.test(fileType || "");
   }
 
+  /** "//asmith_laptop/Content/Hero.uasset" -> "asmith_laptop" */
+  function clientFromClientFile(clientFile) {
+    const match = /^\/\/([^/]+)\//.exec(clientFile || "");
+    return match ? match[1] : "";
+  }
+
+  /** One `opened -a` row -> { depotFile, user, client, change, action, type }. */
+  function normalizeOpened(row) {
+    const get = (name) => Toolkit.field(row, name);
+    const depotFile = get("depotFile");
+    const client = get("client") || clientFromClientFile(get("clientFile"));
+    const user = get("user");
+    return {
+      key: `${client}\u0000${depotFile}`,
+      depotFile,
+      user,
+      client,
+      change: get("change"),
+      action: get("action"),
+      type: get("type") || get("headType"),
+    };
+  }
+
+  /**
+   * For rows missing the user or workspace, read `otherOpen`/`otherLock` from
+   * fstat ("user@workspace"). One fstat call covers all of them.
+   */
+  async function fillMissingOwners(rows) {
+    const missing = rows.filter((r) => !r.user || !r.client);
+    if (!missing.length) return rows;
+
+    const result = await Toolkit.tryRun([
+      "fstat",
+      "-Oa",
+      ...missing.map((r) => r.depotFile),
+    ]);
+    console.log("[revert-exclusive-checkouts] fstat fallback result:", result);
+    const owners = new Map(); // depotFile -> [{ user, client, action, change }]
+    for (const stat of result.data) {
+      const depotFile = Toolkit.field(stat, "depotFile");
+      if (!depotFile) continue;
+      const list = [];
+      for (let i = 0; ; i++) {
+        const open = Toolkit.field(stat, `otherOpen${i}`);
+        if (!open) break;
+        const [user, client] = String(open).split("@");
+        list.push({
+          user,
+          client,
+          action: Toolkit.field(stat, `otherAction${i}`),
+          change: Toolkit.field(stat, `otherChange${i}`),
+        });
+      }
+      // Opened by the current user shows up as action/actionOwner, not otherOpen.
+      if (!list.length && Toolkit.field(stat, "actionOwner")) {
+        list.push({
+          user: Toolkit.field(stat, "actionOwner"),
+          client: Toolkit.currentClient(),
+          action: Toolkit.field(stat, "action"),
+          change: Toolkit.field(stat, "change"),
+        });
+      }
+      owners.set(depotFile, list);
+    }
+
+    const filled = [];
+    for (const row of rows) {
+      if (row.user && row.client) {
+        filled.push(row);
+        continue;
+      }
+      const found = owners.get(row.depotFile) || [];
+      if (!found.length) {
+        filled.push(row); // still unknown; shown as such
+        continue;
+      }
+      for (const owner of found) {
+        const user = row.user || owner.user;
+        const client = row.client || owner.client;
+        filled.push({
+          ...row,
+          user,
+          client,
+          action: row.action || owner.action,
+          change: row.change || owner.change,
+          key: `${client}\u0000${row.depotFile}`,
+        });
+      }
+    }
+    return filled;
+  }
+
   async function search({ keepOutcome = false } = {}) {
     if (busy) return;
     const paths = readPaths();
@@ -82,19 +174,15 @@
       if (!result.ok && !/not opened/i.test(result.error)) {
         throw new Error(result.error);
       }
-      const opened = result.data.filter((f) => f.depotFile);
-      checkouts = opened
-        .filter((f) => isExclusive(f.type))
-        .map((f) => ({
-          key: `${f.client}\u0000${f.depotFile}`,
-          depotFile: f.depotFile,
-          user: f.user,
-          client: f.client,
-          change: f.change,
-          action: f.action,
-          type: f.type,
-        }))
-        .sort((a, b) => a.depotFile.localeCompare(b.depotFile));
+      console.log("[revert-exclusive-checkouts] opened -a result:", result);
+      const opened = result.data
+        .map(normalizeOpened)
+        .filter((f) => f.depotFile);
+      const exclusive = opened.filter((f) => isExclusive(f.type));
+
+      // If the server response didn't say who has a file open, ask fstat.
+      checkouts = await fillMissingOwners(exclusive);
+      checkouts.sort((a, b) => a.depotFile.localeCompare(b.depotFile));
 
       selected.clear();
       Toolkit.setStatus($("searchStatus"), "Looking up workspaces and users…", "busy");
@@ -115,18 +203,34 @@
   async function loadContext() {
     workspaces = {};
     users = {};
-    const clientNames = [...new Set(checkouts.map((c) => c.client))];
-    const userNames = [...new Set(checkouts.map((c) => c.user))];
+    const clientNames = [...new Set(checkouts.map((c) => c.client).filter(Boolean))];
+    const userNames = [...new Set(checkouts.map((c) => c.user).filter(Boolean))];
 
     const clientLookups = clientNames.map(async (name) => {
       const result = await Toolkit.tryRun(["clients", "-e", name]);
-      const match = result.data.find((c) => c.client === name);
-      if (match) workspaces[name] = match;
+      const match = result.data.find(
+        (c) => String(Toolkit.field(c, "client")).toLowerCase() === name.toLowerCase()
+      );
+      if (match) {
+        workspaces[name] = {
+          Host: Toolkit.field(match, "Host"),
+          Access: Toolkit.field(match, "Access"),
+          Owner: Toolkit.field(match, "Owner"),
+        };
+      }
     });
 
     const userLookup = userNames.length
       ? Toolkit.tryRun(["users", "-a", ...userNames]).then((result) => {
-          for (const u of result.data) if (u.User) users[u.User] = u;
+          for (const u of result.data) {
+            const name = Toolkit.field(u, "User");
+            if (name) {
+              users[name] = {
+                FullName: Toolkit.field(u, "FullName"),
+                Access: Toolkit.field(u, "Access"),
+              };
+            }
+          }
         })
       : Promise.resolve();
 
@@ -172,8 +276,8 @@
 
   function renderResults(totalOpened) {
     $("resultsCard").hidden = false;
-    const userCount = new Set(checkouts.map((c) => c.user)).size;
-    const clientCount = new Set(checkouts.map((c) => c.client)).size;
+    const userCount = new Set(checkouts.map((c) => c.user).filter(Boolean)).size;
+    const clientCount = new Set(checkouts.map((c) => c.client).filter(Boolean)).size;
 
     if (!checkouts.length) {
       $("resultsTitle").textContent = "No exclusive checkouts";
@@ -205,10 +309,14 @@
       const person = users[item.user] || {};
       const seen = lastSeenText(person.Access);
 
+      const revertable = Boolean(item.client);
+      const unknown = el("span", { className: "tk-muted" }, "Unknown");
       const checkbox = el("input", {
         type: "checkbox",
         "aria-label": `Select ${item.depotFile}`,
-        checked: selected.has(item.key),
+        title: revertable ? null : "Can't revert: the workspace holding this file couldn't be determined.",
+        disabled: !revertable,
+        checked: revertable && selected.has(item.key),
         onchange: (event) => {
           if (event.target.checked) selected.add(item.key);
           else selected.delete(item.key);
@@ -229,8 +337,10 @@
         el(
           "td",
           {},
-          item.user,
-          item.user === me ? [" ", el("span", { className: "tk-tag tk-tag-you" }, "you")] : null,
+          item.user || unknown,
+          item.user && item.user === me
+            ? [" ", el("span", { className: "tk-tag tk-tag-you" }, "you")]
+            : null,
           person.FullName ? el("span", { className: "cell-sub" }, person.FullName) : null,
           seen.text
             ? el("span", { className: `cell-sub${seen.stale ? " stale" : ""}` }, seen.text)
@@ -239,7 +349,7 @@
         el(
           "td",
           {},
-          item.client,
+          item.client || unknown.cloneNode(true),
           ws.Host ? el("span", { className: "cell-sub" }, `on ${ws.Host}`) : null
         ),
         el(
@@ -256,7 +366,7 @@
   }
 
   function updateSelectionState() {
-    const visible = visibleCheckouts();
+    const visible = visibleCheckouts().filter((item) => item.client);
     const visibleSelected = visible.filter((item) => selected.has(item.key)).length;
     const selectAll = $("selectAll");
     selectAll.checked = visible.length > 0 && visibleSelected === visible.length;
@@ -271,7 +381,7 @@
 
   function toggleAllVisible(checked) {
     for (const item of visibleCheckouts()) {
-      if (checked) selected.add(item.key);
+      if (checked && item.client) selected.add(item.key);
       else selected.delete(item.key);
     }
     renderRows();
@@ -280,7 +390,7 @@
   // ---------- revert ----------
 
   function selectedItems() {
-    return checkouts.filter((item) => selected.has(item.key));
+    return checkouts.filter((item) => item.client && selected.has(item.key));
   }
 
   function showConfirm(show) {
