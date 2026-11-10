@@ -14,26 +14,38 @@ param($User)
 $User = ([string]$User).Trim()
 $nl = [Environment]::NewLine
 function Stop-Tool($Message) { Write-Host ''; Write-Host $Message -ForegroundColor Red; Write-Host ''; Read-Host 'Press Enter to close' | Out-Null; exit 1 }
+function Step($Message) { Write-Host $Message -ForegroundColor DarkGray }
 function Invoke-P4 { $out = & p4 @args 2>&1; $script:p4Exit = $LASTEXITCODE; return ((@($out) | ForEach-Object { $_.ToString() }) -join $nl).Trim() }
+
+# Say something immediately; the p4 checks below each take a round trip to the server.
+Write-Host ('Reset User Password: ' + $User)
+Write-Host ''
 
 if (-not $User) { Stop-Tool 'No user was selected. Right-click a user and run Reset User Password again.' }
 if (-not (Get-Command p4 -ErrorAction SilentlyContinue)) { Stop-Tool 'The p4 command line client was not found on your PATH. Install it, or add its folder to PATH, and try again.' }
 
+# Not your own account (P4V exports P4USER, so this needs no server call)
+$me = $env:P4USER
+if ($me -and ($User -eq $me)) { Stop-Tool 'This is your own account. Change your own password with Connection > Change Password in P4V instead.' }
+
 # Super users only
+Step 'Checking your permissions...'
 $access = Invoke-P4 protects -m
 if ($script:p4Exit -ne 0) { Stop-Tool ('Could not check your permissions:' + $nl + $access) }
 if ($access -ne 'super') { Stop-Tool ('Reset User Password can only be run by a super user.' + $nl + 'Your highest access level on this server is: ' + $access) }
 
-# The account must exist, not be LDAP, and not be your own
+# The account must exist and not be LDAP
+Step ('Looking up ' + $User + '...')
 $found = Invoke-P4 -ztag users -a $User
 if ($found -notmatch '(?m)^\.\.\. User ') { Stop-Tool ('There is no user named ' + $User + ' on this server.') }
 $spec = Invoke-P4 user -o $User
 if ($spec -match '(?mi)^AuthMethod:\s*ldap') { Stop-Tool ($User + ' signs in with LDAP, so their password is managed by your directory service, not Perforce.') }
-$me = $env:P4USER
-if (-not $me) { $me = ((Invoke-P4 -ztag info) -split $nl | Where-Object { $_ -like '... userName *' }) -replace '^\.\.\. userName ', '' }
-if ($User -eq $me) { Stop-Tool 'This is your own account. Change your own password with Connection > Change Password in P4V instead.' }
+if (-not $me) {
+    $me = ((Invoke-P4 -ztag info) -split $nl | Where-Object { $_ -like '... userName *' }) -replace '^\.\.\. userName ', ''
+    if ($User -eq $me) { Stop-Tool 'This is your own account. Change your own password with Connection > Change Password in P4V instead.' }
+}
 
-Write-Host ('Resetting the password for ' + $User + '...')
+Step 'Setting a new temporary password...'
 
 # 12 characters from an alphabet without look-alikes (0/O, 1/l/I); must mix upper, lower and digits
 $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'.ToCharArray()

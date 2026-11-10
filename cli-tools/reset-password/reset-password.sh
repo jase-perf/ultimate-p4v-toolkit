@@ -15,31 +15,47 @@
 export LC_ALL=C
 user=$1
 pause() { echo; echo 'Press Return to close.'; read -r _ </dev/tty; }
-fail() { echo; echo $@; pause; exit 1; }
+fail() { echo; echo "$*"; pause; exit 1; }
+step() { echo "$*"; }
+own_account='This is your own account. Change your own password with Connection > Change Password in P4V instead.'
 
-[ -z $user ] && fail No user was selected. Right-click a user and run Reset User Password again.
-command -v p4 >/dev/null 2>&1 || fail The p4 command line client was not found on your PATH. Install it or add it to PATH in your shell profile, then try again.
+# Say something immediately; the p4 checks below each take a round trip to the server.
+echo "Reset User Password: $user"
+echo
+
+[ -z "$user" ] && fail 'No user was selected. Right-click a user and run Reset User Password again.'
+command -v p4 >/dev/null 2>&1 || fail 'The p4 command line client was not found on your PATH. Install it or add it to PATH in your shell profile, then try again.'
+
+# Not your own account (P4V exports P4USER, so this needs no server call)
+me=$P4USER
+[ -n "$me" ] && [ "$user" = "$me" ] && fail "$own_account"
 
 # Super users only
-access=$(p4 protects -m 2>&1) || fail Could not check your permissions: $access
-case $access in super) ;; *) fail Reset User Password can only be run by a super user. Your highest access level on this server is: $access ;; esac
+step 'Checking your permissions...'
+access=$(p4 protects -m 2>&1) || fail "Could not check your permissions: $access"
+[ "$access" = super ] || fail "Reset User Password can only be run by a super user. Your highest access level on this server is: $access"
 
-# The account must exist, not be LDAP, and not be your own
-p4 -ztag users -a $user 2>/dev/null | grep -q '^[.][.][.] User ' || fail There is no user named $user on this server.
-p4 user -o $user 2>/dev/null | grep -qi '^AuthMethod:[[:space:]]*ldap' && fail $user signs in with LDAP, so their password is managed by your directory service, not Perforce.
-me=$P4USER
-[ -z $me ] && me=$(p4 -ztag info 2>/dev/null | sed -n 's/^[.][.][.] userName //p')
-[ x$user = x$me ] && fail This is your own account. Change your own password with Connection, Change Password in P4V instead.
+# The account must exist and not be LDAP
+step "Looking up $user..."
+p4 -ztag users -a "$user" 2>/dev/null | grep -q '^[.][.][.] User ' || fail "There is no user named $user on this server."
+p4 user -o "$user" 2>/dev/null | grep -qi '^AuthMethod:[[:space:]]*ldap' && fail "$user signs in with LDAP, so their password is managed by your directory service, not Perforce."
+if [ -z "$me" ]; then
+  me=$(p4 -ztag info 2>/dev/null | sed -n 's/^[.][.][.] userName //p')
+  [ "$user" = "$me" ] && fail "$own_account"
+fi
 
-echo "Resetting the password for $user..."
+step 'Setting a new temporary password...'
 
 # 12 characters from an alphabet without look-alikes (0/O, 1/l/I); must mix upper, lower and digits
-while true; do pw=$(tr -dc 'A-HJ-NP-Za-km-z2-9' < /dev/urandom | head -c 12); echo $pw | grep -q '[A-Z]' && echo $pw | grep -q '[a-z]' && echo $pw | grep -q '[0-9]' && break; done
+while true; do
+  pw=$(tr -dc 'A-HJ-NP-Za-km-z2-9' < /dev/urandom | head -c 12)
+  echo "$pw" | grep -q '[A-Z]' && echo "$pw" | grep -q '[a-z]' && echo "$pw" | grep -q '[0-9]' && break
+done
 
 # p4 passwd prompts twice for the new password; answer both through stdin
-result=$( (echo $pw; echo $pw) | p4 passwd $user 2>&1 ) || fail The password was not changed: $result
+result=$( (echo "$pw"; echo "$pw") | p4 passwd "$user" 2>&1 ) || fail "The password was not changed: $result"
 
-forced=$(p4 admin resetpassword -u $user 2>&1) && forceok=1 || forceok=0
+forced=$(p4 admin resetpassword -u "$user" 2>&1) && forceok=1 || forceok=0
 
 # The message to send the user (shown and copied to the clipboard)
 if [ "$forceok" = 1 ]; then
