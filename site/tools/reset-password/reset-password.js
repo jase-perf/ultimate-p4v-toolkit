@@ -217,7 +217,7 @@
 
   function showResult(name, password, forceChange, forceNote) {
     $("resetCard").hidden = true;
-    $("userWarning").hidden = true;
+    $("userCard").hidden = true;
     $("resultUser").textContent = name;
     $("resultPassword").textContent = password;
     $("resultForceNote").textContent = forceNote;
@@ -265,6 +265,7 @@
   function startOver() {
     resetResult();
     targetUser = null;
+    $("userCard").hidden = false;
     $("userDetails").hidden = true;
     $("userWarning").hidden = true;
     $("resetCard").hidden = true;

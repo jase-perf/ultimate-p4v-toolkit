@@ -1,3 +1,63 @@
+/* Fill the HTML Window exactly; only the results table scrolls. */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.tk-app {
+  height: 100vh;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+}
+
+#main:not([hidden]) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#main > .tk-card,
+#outcome {
+  flex-shrink: 0;
+}
+
+#resultsCard:not([hidden]) {
+  flex: 1 1 auto;
+  min-height: 12rem;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+#resultsCard .tk-table-wrap {
+  flex: 1 1 auto;
+  min-height: 6rem;
+  max-height: none;
+}
+
+#resultsCard .tk-actions,
+#resultsCard .confirm-panel {
+  flex-shrink: 0;
+}
+
+#outcome {
+  max-height: 9rem;
+  overflow: auto;
+  margin-bottom: 1rem;
+}
+
+#outcome .tk-notice {
+  margin-bottom: 0.5rem;
+}
+
 .results-head h2 {
   margin-bottom: 0;
 }
