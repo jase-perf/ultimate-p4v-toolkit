@@ -4,6 +4,8 @@ A collection of custom tools for P4V and P4Admin, built as HTML tools and served
 
 Work in progress.
 
+**Tool URLs and setup details:** <https://jase.town/ultimate-p4v-toolkit/>. The site is published from the `site/` folder by GitHub Actions on every push to `main`.
+
 ## Tools
 
 | Tool | Type | Argument | Who can use it |

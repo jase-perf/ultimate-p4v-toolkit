@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ultimate P4V Toolkit</title>
+    <link rel="stylesheet" type="text/css" href="shared/style.css" />
+    <link rel="stylesheet" type="text/css" href="shared/toolkit.css" />
+    <style>
+      .tk-app {
+        max-width: 64rem;
+        margin: 0 auto;
+      }
+      .tool-url {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .tool-url code {
+        flex: 1;
+        word-break: break-all;
+      }
+      .tool-meta {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 0.25rem 1rem;
+        margin: 0.6rem 0 0.75rem;
+      }
+      .tool-meta dt {
+        color: var(--tk-muted);
+      }
+      .tk-card p + .tool-meta {
+        margin-top: 0.6rem;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #363636;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="tk-app">
+      <header class="tk-header">
+        <h1>Ultimate P4V Toolkit</h1>
+        <p>
+          Custom tools for P4V and P4Admin, served from this site. Add a tool
+          by pointing a P4V or P4Admin tool definition at its URL. There's
+          nothing to install.
+        </p>
+      </header>
+
+      <div class="tk-notice">
+        <strong class="tk-notice-title">Adding a tool</strong>
+        <p>
+          Turn on HTML Tools in <em>Edit &gt; Preferences &gt; HTML Tools</em>.
+          Then go to <em>Tools &gt; Manage Tools</em> and add an HTML Window or
+          HTML Tab with the URL and settings below.
+        </p>
+      </div>
+
+      <div id="tools"></div>
+
+      <p class="tk-muted">
+        Source and license:
+        <a href="https://github.com/jase-perf/ultimate-p4v-toolkit">github.com/jase-perf/ultimate-p4v-toolkit</a>
+      </p>
+    </main>
+
+    <script src="shared/toolkit.js"></script>
+    <script>
+      (() => {
+        if (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) {
+          document.body.classList.add("dark-theme");
+        }
+
+        const tools = [
+          {
+            name: "Reset User Password",
+            path: "tools/reset-password/index.html",
+            kind: "HTML Window",
+            description:
+              "Give a user a new temporary password and require them to choose their own at next login. Best added in P4Admin.",
+            meta: [
+              ["Argument", "%u (selected user)"],
+              ["Window size", "720 × 660"],
+              ["Who can use it", "Super users"],
+            ],
+          },
+          {
+            name: "Revert Exclusive Checkouts",
+            path: "tools/revert-exclusive-checkouts/index.html",
+            kind: "HTML Window",
+            description:
+              "Find files checked out exclusively (+l) under the selected files or folders, and revert the checkouts so others can work on them.",
+            meta: [
+              ["Argument", "P4V: %D  ·  P4Admin: %F (files) or %r (folder)"],
+              ["Window size", "960 × 760"],
+              ["Who can use it", "Admins and super users"],
+            ],
+          },
+          {
+            name: "Typemap Editor",
+            path: "tools/typemap/index.html",
+            kind: "HTML Tab",
+            description:
+              "View and edit the server typemap, with templates for common project types.",
+            meta: [["Who can use it", "Admins and super users"]],
+          },
+          {
+            name: "AI Help",
+            path: "tools/ai-help/index.html",
+            kind: "HTML Tab",
+            description:
+              "Ask questions and get answers with links to the Perforce documentation and knowledge base.",
+            meta: [["Who can use it", "Everyone"]],
+          },
+        ];
+
+        const { el } = Toolkit;
+        const base = new URL(".", location.href);
+        const container = document.getElementById("tools");
+
+        for (const tool of tools) {
+          const url = new URL(tool.path, base).href;
+          const status = el("span", { className: "tk-status" });
+          container.appendChild(
+            el(
+              "section",
+              { className: "tk-card" },
+              el("h2", {}, `${tool.name} `, el("span", { className: "tk-tag" }, tool.kind)),
+              el("p", {}, tool.description),
+              el(
+                "dl",
+                { className: "tool-meta" },
+                tool.meta.flatMap(([label, value]) => [el("dt", {}, label), el("dd", {}, value)])
+              ),
+              el(
+                "div",
+                { className: "tool-url" },
+                el("code", {}, url),
+                el(
+                  "button",
+                  {
+                    type: "button",
+                    className: "tk-btn",
+                    onclick: async () => {
+                      const ok = await Toolkit.copyText(url);
+                      Toolkit.setStatus(status, ok ? "Copied" : "Copy failed", ok ? "success" : "error");
+                    },
+                  },
+                  "Copy URL"
+                ),
+                status
+              )
+            )
+          );
+        }
+      })();
+    </script>
+  </body>
+</html>
