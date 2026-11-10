@@ -184,7 +184,10 @@
       checkouts = await fillMissingOwners(exclusive);
       checkouts.sort((a, b) => a.depotFile.localeCompare(b.depotFile));
 
+      // Everything starts selected; the user unchecks anything to keep.
       selected.clear();
+      for (const item of checkouts) if (item.client) selected.add(item.key);
+
       Toolkit.setStatus($("searchStatus"), "Looking up workspaces and users…", "busy");
       await loadContext();
 
