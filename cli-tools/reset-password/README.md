@@ -4,17 +4,23 @@ Right-click a user, run the tool, and it:
 
 1. checks that you're a super user (and stops with an explanation if not)
 2. refuses LDAP accounts and your own account
-3. asks you to press Enter to confirm
-4. sets a random 12-character temporary password with `p4 passwd`
-5. requires the user to choose a new password at next login (`p4 admin resetpassword -u`)
-6. prints a message you can send to the user, and puts it on your clipboard:
+3. sets a random 12-character temporary password with `p4 passwd`
+4. requires the user to choose a new password at next login (`p4 admin resetpassword -u`)
+5. prints a message you can paste straight to the user, and puts it on your clipboard:
 
 ```
+Your password has been reset.
+You can log in with this temporary password:
+
 ----------------------------------
 Username: jdoe
 Password: AuQtTU6Uw37s
 ----------------------------------
+
+You will be prompted to change it when you log in.
 ```
+
+There's no confirmation step: running the tool on a user resets their password right away.
 
 It's a command-line Custom Tool rather than an HTML Window. At security level 2 and above, `p4 passwd` only accepts the new password at its prompts, and P4V's JavaScript API can't answer prompts. The `p4` command line client can, so it must be installed and on your PATH.
 

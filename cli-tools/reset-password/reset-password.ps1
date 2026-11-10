@@ -33,10 +33,7 @@ $me = $env:P4USER
 if (-not $me) { $me = ((Invoke-P4 -ztag info) -split $nl | Where-Object { $_ -like '... userName *' }) -replace '^\.\.\. userName ', '' }
 if ($User -eq $me) { Stop-Tool 'This is your own account. Change your own password with Connection > Change Password in P4V instead.' }
 
-Write-Host ''
-Write-Host ('Reset the password for ' + $User + '?') -ForegroundColor Yellow
-Write-Host 'Their current password will stop working immediately.'
-Read-Host 'Press Enter to continue, or close this window to cancel' | Out-Null
+Write-Host ('Resetting the password for ' + $User + '...')
 
 # 12 characters from an alphabet without look-alikes (0/O, 1/l/I); must mix upper, lower and digits
 $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'.ToCharArray()
@@ -51,8 +48,10 @@ if ($LASTEXITCODE -ne 0) { Stop-Tool ('The password was not changed:' + $nl + $r
 $forced = Invoke-P4 admin resetpassword -u $User
 $forceOk = ($script:p4Exit -eq 0)
 
+# The message to send the user (shown and copied to the clipboard)
 $line = '----------------------------------'
-$message = ($line, ('Username: ' + $User), ('Password: ' + $pw), $line) -join $nl
+if ($forceOk) { $closing = 'You will be prompted to change it when you log in.' } else { $closing = 'Please change it after you log in.' }
+$message = ('Your password has been reset.', 'You can log in with this temporary password:', '', $line, ('Username: ' + $User), ('Password: ' + $pw), $line, '', $closing) -join $nl
 $copied = $false
 try { Set-Clipboard -Value $message; $copied = $true } catch { $copied = $false }
 
@@ -60,6 +59,6 @@ Write-Host ''
 Write-Host $message
 Write-Host ''
 if ($copied) { Write-Host ('This message is on your clipboard. Paste it straight to ' + $User + '.') -ForegroundColor Green } else { Write-Host 'Could not copy to the clipboard. Select the message above and copy it manually.' -ForegroundColor Yellow }
-if ($forceOk) { Write-Host 'They will be asked to choose a new password the next time they log in.' } else { Write-Host ('The password was set, but requiring a new password at next login failed:' + $nl + $forced) -ForegroundColor Yellow }
+if (-not $forceOk) { Write-Host ('Note: the password was set, but requiring a new password at next login failed:' + $nl + $forced) -ForegroundColor Yellow }
 Write-Host ''
 Read-Host 'Press Enter to close' | Out-Null
