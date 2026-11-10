@@ -282,19 +282,6 @@ const Toolkit = (() => {
     return "";
   }
 
-  function securityLevel() {
-    try {
-      const value =
-        inP4V() && typeof p4vjs.getServerSecurityLevel === "function"
-          ? p4vjs.getServerSecurityLevel()
-          : "0";
-      const parsed = parseInt(value, 10);
-      return Number.isNaN(parsed) ? 0 : parsed;
-    } catch (err) {
-      return 0;
-    }
-  }
-
   function applyTheme() {
     try {
       if (inP4V() && p4vjs.useDarkTheme && p4vjs.useDarkTheme()) {
@@ -306,10 +293,10 @@ const Toolkit = (() => {
   }
 
   /** Stop P4V from also popping up its own dialog for errors we display. */
-  function quietP4VErrors() {
+  async function quietP4VErrors() {
     try {
       if (inP4V() && typeof p4vjs.setP4VErrorDialogEnabled === "function") {
-        p4vjs.setP4VErrorDialogEnabled(false);
+        await p4vjs.setP4VErrorDialogEnabled(false);
       }
     } catch (err) {
       // older P4V
@@ -447,7 +434,6 @@ const Toolkit = (() => {
     toDepotPaths,
     expandDirectories,
     param,
-    securityLevel,
     applyTheme,
     quietP4VErrors,
     refresh,
