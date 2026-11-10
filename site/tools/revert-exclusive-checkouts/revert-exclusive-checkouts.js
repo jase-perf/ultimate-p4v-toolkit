@@ -3,7 +3,7 @@
 /**
  * Revert Exclusive Checkouts
  *
- * HTML Window for P4V / P4Admin. Argument: %D or %F (all selected files at
+ * HTML Window for P4V / P4Admin. Argument: %D or %F (all selected files or folders at
  * once; %F's workspace paths are converted with 'p4 where'), %r for a folder
  * in P4Admin, or open it from the Tools menu and type paths. Requires 'admin' access
  * ('p4 revert -C <client>' on another user's workspace needs admin).
@@ -30,8 +30,9 @@
   function readPaths() {
     return $("pathInput")
       .value.split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean);
+      .map((line) => line.trim().replace(/^"(.*)"$/, "$1"))
+      .filter(Boolean)
+      .map((path) => (/[\\/]$/.test(path) ? Toolkit.toFolderWildcard(path) : path));
   }
 
   function isExclusive(fileType) {
@@ -57,7 +58,6 @@
       if (paths.some((p) => !Toolkit.isDepotPath(p))) {
         Toolkit.setStatus($("searchStatus"), "Converting local paths…", "busy");
         ({ paths: depotPaths, unmapped } = await Toolkit.toDepotPaths(paths));
-        $("pathInput").value = [...depotPaths, ...unmapped].join("\n");
         if (unmapped.length) {
           showOutcome("warning", "Some paths aren't in your workspace view", [
             "These local paths couldn't be converted to depot paths, so they were skipped. Use depot paths (//...) instead:",
@@ -65,10 +65,17 @@
           ]);
         }
         if (!depotPaths.length) {
+          $("pathInput").value = unmapped.join("\n");
           Toolkit.setStatus($("searchStatus"), "");
           return;
         }
       }
+
+      // A folder may arrive as a plain path (e.g. %r, or a folder passed as a
+      // "file"); search everything under it rather than the folder name itself.
+      Toolkit.setStatus($("searchStatus"), "Checking for folders…", "busy");
+      depotPaths = await Toolkit.expandDirectories(depotPaths);
+      $("pathInput").value = [...depotPaths, ...unmapped].join("\n");
 
       Toolkit.setStatus($("searchStatus"), "Searching…", "busy");
       const result = await Toolkit.tryRun(["opened", "-a", ...depotPaths]);

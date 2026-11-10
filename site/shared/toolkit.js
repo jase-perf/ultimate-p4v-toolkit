@@ -132,42 +132,71 @@ const Toolkit = (() => {
     return { allowed, access, user };
   }
 
+  /** Parameter names P4V/P4Admin may use when passing a path selection. */
+  const PATH_PARAMS = ["directory", "dir", "folder", "path", "depot", "file", "files"];
+
   /**
-   * Gather the paths the tool was opened on: selected files, selected folders
-   * (as `folder/...`), or a parameter P4V passed in.
+   * Gather the paths the tool was opened on, from every source p4vjs offers:
+   * selectedFiles(), selectedDirectories() (as `folder/...`), getSelection(),
+   * and injected page parameters. Folders that arrive as plain paths (no
+   * trailing `/...`) are not detected here; see expandDirectories().
    * @returns {Promise<string[]>}
    */
   async function selectedPaths() {
     const paths = [];
     if (!inP4V()) return paths;
 
-    const add = (value) => {
+    const add = (value, asFolder = false) => {
       if (!value) return;
-      const list = Array.isArray(value) ? value : [value];
+      const list = Array.isArray(value)
+        ? value
+        : String(value).split(/\r?\n|,(?=\s*(?:\/\/|[A-Za-z]:[\\/]))/);
       for (const item of list) {
-        const path = String(item).trim();
-        if (path && !paths.includes(path)) paths.push(path);
+        let path = String(item).trim();
+        if (!path) continue;
+        if (asFolder || /[\\/]$/.test(path)) path = toFolderWildcard(path);
+        if (!paths.includes(path)) paths.push(path);
       }
     };
 
-    try {
-      if (typeof p4vjs.selectedFiles === "function") {
-        add(await p4vjs.selectedFiles());
+    const tryCall = async (name, asFolder) => {
+      try {
+        if (typeof p4vjs[name] === "function") add(await p4vjs[name](), asFolder);
+      } catch (err) {
+        console.warn(`${name}() failed`, err);
       }
-    } catch (err) {
-      console.warn("selectedFiles() failed", err);
-    }
+    };
 
-    try {
-      if (typeof p4vjs.selectedDirectories === "function") {
-        const dirs = (await p4vjs.selectedDirectories()) || [];
-        add(dirs.map(toFolderWildcard));
-      }
-    } catch (err) {
-      console.warn("selectedDirectories() failed", err);
-    }
+    await tryCall("selectedFiles", false);
+    await tryCall("selectedDirectories", true);
+    if (!paths.length) await tryCall("getSelection", false);
+    if (!paths.length) add(param(...PATH_PARAMS));
 
-    return paths;
+    // A folder can appear both as "//x/dir" and "//x/dir/..."; keep the wildcard form.
+    return paths.filter((path) => !paths.includes(`${path}/...`) && !paths.includes(`${path}\\...`));
+  }
+
+  /**
+   * Find which plain depot paths are actually folders and turn them into
+   * `folder/...`, so a directory selection searches everything under it.
+   * Paths that already contain wildcards pass through unchanged.
+   * @param {string[]} depotPaths
+   * @returns {Promise<string[]>}
+   */
+  async function expandDirectories(depotPaths) {
+    const plain = depotPaths.filter(
+      (path) => isDepotPath(path) && !/(\.\.\.|\*)/.test(path)
+    );
+    if (!plain.length) return depotPaths;
+
+    const result = await tryRun(["dirs", ...plain]);
+    const dirs = new Set(
+      result.data.map((row) => row.dir).filter(Boolean).map((dir) => dir.toLowerCase())
+    );
+    if (!dirs.size) return depotPaths;
+    return depotPaths.map((path) =>
+      dirs.has(path.toLowerCase()) ? toFolderWildcard(path) : path
+    );
   }
 
   /** "//depot/main/Art" -> "//depot/main/Art/..." (leaves wildcards alone). */
@@ -384,6 +413,7 @@ const Toolkit = (() => {
     toFolderWildcard,
     isDepotPath,
     toDepotPaths,
+    expandDirectories,
     param,
     securityLevel,
     applyTheme,
