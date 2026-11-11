@@ -10,6 +10,7 @@ Work in progress.
 
 | Tool | Type | Argument | Who can use it |
 |---|---|---|---|
+| [Project Activity](site/tools/project-activity/) | HTML Tab (or HTML Window) | none (`%D` as a window) | Everyone |
 | [Reset User Password](cli-tools/reset-password/) | Custom Tool (Windows / macOS, needs `p4` on PATH) | `%u` (user) | Super users |
 | [Revert Exclusive Checkouts](site/tools/revert-exclusive-checkouts/) | HTML Window | `%D`, `%F`, or `%r` (files or folders) | Admins and super users |
 | [Typemap Editor](site/tools/typemap/) | HTML Tab | none | Admins and super users |
@@ -20,3 +21,5 @@ Tools that need elevated access check the current user's access level when they 
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+Includes [D3](https://d3js.org) 7.9.0 (ISC license, see [`site/shared/vendor/d3-LICENSE.txt`](site/shared/vendor/d3-LICENSE.txt)).

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Project Activity</title>
+    <script type="text/javascript">
+      var darktheme =
+        typeof p4vjs !== "undefined" && p4vjs.useDarkTheme && p4vjs.useDarkTheme();
+      document.write(
+        '<link rel="stylesheet" type="text/css" href="../../shared/' +
+          (darktheme ? "darkstyle.css" : "style.css") +
+          '" />'
+      );
+    </script>
+    <link rel="stylesheet" type="text/css" href="../../shared/toolkit.css" />
+    <link rel="stylesheet" type="text/css" href="project-activity.css" />
+    <script type="text/javascript" src="../../shared/vendor/d3.v7.9.0.min.js"></script>
+    <script type="text/javascript" src="../../shared/toolkit.js"></script>
+    <script type="text/javascript" src="project-activity.js"></script>
+  </head>
+  <body class="pa-body">
+    <main class="tk-app pa-app">
+      <header class="pa-top">
+        <div class="pa-title">
+          <h1>Project Activity</h1>
+          <p class="tk-muted">Everything checked out, and who has it.</p>
+        </div>
+        <form id="pathForm" class="pa-controls" autocomplete="off">
+          <input
+            id="pathInput"
+            class="pa-path"
+            type="text"
+            list="recentPaths"
+            spellcheck="false"
+            placeholder="//depot/main/..."
+            aria-label="Depot or workspace path"
+          />
+          <datalist id="recentPaths"></datalist>
+          <button type="submit" class="tk-btn tk-btn-primary" id="mapButton">Map it</button>
+          <button type="button" class="tk-btn pa-icon-btn" id="refreshButton" title="Refresh" aria-label="Refresh">
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M13.6 2.4A7.2 7.2 0 0 0 1 7h1.6a5.6 5.6 0 0 1 9.9-3.5L10 6h5V1l-1.4 1.4ZM13.4 9a5.6 5.6 0 0 1-9.9 3.5L6 10H1v5l1.4-1.4A7.2 7.2 0 0 0 15 9h-1.6Z"/></svg>
+          </button>
+          <label class="pa-live" title="Refresh automatically every 30 seconds">
+            <input type="checkbox" id="liveToggle" />
+            <span class="pa-live-dot" aria-hidden="true"></span>
+            Live
+          </label>
+          <div class="pa-segment" role="group" aria-label="Colour by">
+            <button type="button" data-mode="person" class="is-active">People</button>
+            <button type="button" data-mode="action">Actions</button>
+          </div>
+        </form>
+      </header>
+
+      <section class="pa-stats" aria-label="Summary">
+        <div class="pa-stat"><span class="pa-stat-value" id="statFiles">0</span><span class="pa-stat-label">checked out</span></div>
+        <div class="pa-stat"><span class="pa-stat-value" id="statPeople">0</span><span class="pa-stat-label">people</span></div>
+        <div class="pa-stat"><span class="pa-stat-value" id="statClients">0</span><span class="pa-stat-label">workspaces</span></div>
+        <button type="button" class="pa-stat pa-stat-toggle" id="statExclusiveBtn" data-spot="exclusive" title="Highlight exclusive checkouts">
+          <span class="pa-stat-value" id="statExclusive">0</span><span class="pa-stat-label"><i class="pa-key pa-key-exclusive"></i>exclusive</span>
+        </button>
+        <button type="button" class="pa-stat pa-stat-toggle" id="statSharedBtn" data-spot="shared" title="Highlight files more than one person has open">
+          <span class="pa-stat-value" id="statShared">0</span><span class="pa-stat-label"><i class="pa-key pa-key-shared"></i>shared files</span>
+        </button>
+        <span class="pa-updated tk-muted" id="updated"></span>
+      </section>
+
+      <div id="notice" class="pa-notice" hidden></div>
+
+      <div class="pa-main">
+        <section class="pa-mapwrap">
+          <nav class="pa-crumbs" id="crumbs" aria-label="Folder path"></nav>
+          <div class="pa-map" id="map" role="img" aria-label="Map of checked-out files">
+            <div class="pa-overlay" id="overlay" hidden>
+              <div class="pa-spinner" aria-hidden="true"></div>
+              <span id="overlayText">Mapping…</span>
+            </div>
+          </div>
+          <div class="pa-legend" id="legend"></div>
+        </section>
+
+        <aside class="pa-side">
+          <section class="pa-panel pa-details" id="details" hidden></section>
+          <section class="pa-panel">
+            <h2>People</h2>
+            <ul class="pa-people" id="people"></ul>
+          </section>
+          <section class="pa-panel">
+            <h2>Busiest folders</h2>
+            <ul class="pa-folders" id="folders"></ul>
+          </section>
+          <section class="pa-panel" id="sharedPanel" hidden>
+            <h2>Shared files</h2>
+            <p class="tk-muted pa-panel-note">More than one person has these open, so someone will need to resolve.</p>
+            <ul class="pa-sharedlist" id="sharedList"></ul>
+          </section>
+        </aside>
+      </div>
+    </main>
+    <div class="pa-tooltip" id="tooltip" hidden></div>
+  </body>
+</html>
