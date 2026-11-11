@@ -793,6 +793,10 @@
           node.textContent = interpolate(t).toLocaleString();
         };
       });
+    // Land on the final value even if animation frames are throttled.
+    setTimeout(() => {
+      if (Number(node.dataset.value) === value) node.textContent = value.toLocaleString();
+    }, 900);
   }
 
   function renderStats() {

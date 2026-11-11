@@ -11,6 +11,7 @@ Work in progress.
 | Tool | Type | Argument | Who can use it |
 |---|---|---|---|
 | [Project Activity](site/tools/project-activity/) | HTML Tab (or HTML Window) | none (`%D` as a window) | Everyone |
+| [Depot Size Map](site/tools/depot-size-map/) | HTML Tab (or HTML Window) | none (`%D` as a window) | Everyone |
 | [Reset User Password](cli-tools/reset-password/) | Custom Tool (Windows / macOS, needs `p4` on PATH) | `%u` (user) | Super users |
 | [Revert Exclusive Checkouts](site/tools/revert-exclusive-checkouts/) | HTML Window | `%D`, `%F`, or `%r` (files or folders) | Admins and super users |
 | [Typemap Editor](site/tools/typemap/) | HTML Tab | none | Admins and super users |
