@@ -1,0 +1,1165 @@
+/* Server Activity: trends, calendar, freshness and people views of submitted work. */
+
+body.ac-body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #f4f6f9;
+}
+
+body.dark-theme.ac-body {
+  background: #24272c;
+}
+
+.tk-app.ac-app {
+  --ac-panel: #ffffff;
+  --ac-panel-border: #dde2ea;
+  --ac-chart-bg: #ffffff;
+  --ac-grid: rgba(30, 45, 70, 0.08);
+  --ac-axis: #7a8394;
+  --ac-map-bg: #e9edf3;
+  --ac-line: rgba(30, 45, 70, 0.1);
+  --ac-cal-0: #ebedf0;
+  --ac-cal-1: #9be9a8;
+  --ac-cal-2: #40c463;
+  --ac-cal-3: #30a14e;
+  --ac-cal-4: #216e39;
+  --ac-cal-text: #1b1f24;
+
+  max-width: none;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.7rem 0.85rem 0.75rem;
+}
+
+body.dark-theme .tk-app.ac-app {
+  --ac-panel: #2c3036;
+  --ac-panel-border: #3a3f47;
+  --ac-chart-bg: #282c32;
+  --ac-grid: rgba(255, 255, 255, 0.07);
+  --ac-axis: #9aa3b2;
+  --ac-map-bg: #171a1f;
+  --ac-line: rgba(255, 255, 255, 0.08);
+  --ac-cal-0: #33383f;
+  --ac-cal-1: #0e4429;
+  --ac-cal-2: #006d32;
+  --ac-cal-3: #26a641;
+  --ac-cal-4: #39d353;
+}
+
+/* ---------- Header ---------- */
+
+.ac-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.ac-title h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.ac-title p {
+  font-size: 0.85rem;
+}
+
+.ac-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.ac-path {
+  flex: 1;
+  min-width: 12rem;
+  max-width: 28rem;
+  padding: 0.42rem 0.6rem;
+  border: 1px solid var(--tk-border);
+  border-radius: 6px;
+  background: var(--tk-surface);
+  color: var(--tk-text);
+  font-family: Consolas, "SF Mono", Menlo, monospace !important;
+  font-size: 0.85rem;
+}
+
+.ac-select {
+  padding: 0.38rem 0.5rem;
+  border: 1px solid var(--tk-border);
+  border-radius: 6px;
+  background: var(--tk-surface);
+  color: var(--tk-text);
+  font-size: 0.85rem;
+}
+
+.ac-path:focus,
+.ac-select:focus {
+  outline: 2px solid var(--tk-accent);
+  outline-offset: -1px;
+}
+
+.ac-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 0.55rem;
+  padding-right: 0.55rem;
+}
+
+.ac-icon-btn.is-spinning svg {
+  animation: ac-spin 0.8s linear infinite;
+}
+
+/* ---------- Status bar ---------- */
+
+.ac-statusbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  min-height: 1.5rem;
+  font-size: 0.8rem;
+  color: var(--tk-muted);
+}
+
+.ac-status-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ac-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.ac-status-dot.is-memory {
+  background: #f2c230;
+}
+
+.ac-progress {
+  position: relative;
+  width: 140px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--ac-line);
+  overflow: hidden;
+}
+
+.ac-progress[hidden] {
+  display: none;
+}
+
+.ac-progress > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 30%;
+  border-radius: 3px;
+  background: var(--tk-accent);
+  transition: width 0.4s ease;
+}
+
+.ac-progress.is-indeterminate > span {
+  animation: ac-slide 1.2s ease-in-out infinite;
+}
+
+.ac-status-actions {
+  display: inline-flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.ac-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--tk-accent);
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.ac-link:hover {
+  text-decoration: underline;
+}
+
+.ac-notice .tk-notice {
+  margin: 0;
+}
+
+/* ---------- Tabs and filters ---------- */
+
+.ac-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--ac-panel-border);
+}
+
+.ac-tabs > button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--tk-muted);
+  padding: 0.4rem 0.8rem;
+  margin-bottom: -1px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ac-tabs > button:hover {
+  color: var(--tk-text);
+}
+
+.ac-tabs > button.is-active {
+  color: var(--tk-text);
+  border-bottom-color: var(--tk-accent);
+}
+
+.ac-filters {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-left: auto;
+  padding-bottom: 0.2rem;
+}
+
+.ac-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.3rem 0.15rem 0.55rem;
+  border: 1px solid var(--tk-accent);
+  border-radius: 999px;
+  color: var(--tk-text);
+  font-size: 0.8rem;
+}
+
+.ac-chip button {
+  border: 0;
+  background: transparent;
+  color: var(--tk-muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0 0.2rem;
+}
+
+/* ---------- Cards ---------- */
+
+.ac-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ac-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 7.5rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--ac-panel-border);
+  border-radius: 8px;
+  background: var(--ac-panel);
+}
+
+.ac-card-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.ac-card-label {
+  font-size: 0.78rem;
+  color: var(--tk-muted);
+}
+
+.ac-card-trend {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ac-card-trend.is-up {
+  color: #16a34a;
+}
+
+.ac-card-trend.is-down {
+  color: #dc2626;
+}
+
+body.dark-theme .ac-card-trend.is-up {
+  color: #4ade80;
+}
+
+body.dark-theme .ac-card-trend.is-down {
+  color: #f87171;
+}
+
+/* ---------- View area ---------- */
+
+.ac-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 0.7rem;
+}
+
+.ac-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.ac-side {
+  width: 19rem;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.ac-panel {
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--ac-panel-border);
+  border-radius: 10px;
+  background: var(--ac-panel);
+}
+
+.ac-panel h2 {
+  margin-bottom: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tk-muted);
+}
+
+.ac-panel-note {
+  margin-bottom: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--tk-muted);
+}
+
+.ac-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+.ac-toolbar label {
+  color: var(--tk-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ac-segment {
+  display: inline-flex;
+  border: 1px solid var(--tk-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ac-segment button {
+  border: 0;
+  background: transparent;
+  color: var(--tk-text);
+  padding: 0.28rem 0.6rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.ac-segment button + button {
+  border-left: 1px solid var(--tk-border);
+}
+
+.ac-segment button.is-active {
+  background: var(--tk-accent);
+  color: var(--tk-accent-text);
+}
+
+.ac-segment button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ac-chart {
+  position: relative;
+  flex: 1;
+  min-height: 14rem;
+  border: 1px solid var(--ac-panel-border);
+  border-radius: 10px;
+  background: var(--ac-chart-bg);
+  overflow: hidden;
+}
+
+.ac-chart svg {
+  display: block;
+}
+
+.ac-context {
+  height: 64px;
+  flex: none;
+  border: 1px solid var(--ac-panel-border);
+  border-radius: 8px;
+  background: var(--ac-chart-bg);
+  overflow: hidden;
+}
+
+.ac-axis text {
+  fill: var(--ac-axis);
+  font-size: 11px;
+  font-family: helvetica, arial, sans-serif;
+}
+
+.ac-axis path,
+.ac-axis line {
+  stroke: var(--ac-grid);
+}
+
+.ac-gridline line {
+  stroke: var(--ac-grid);
+}
+
+.ac-gridline path {
+  display: none;
+}
+
+.ac-line {
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: opacity 0.2s ease, stroke-width 0.2s ease;
+}
+
+.ac-chart.is-focusing .ac-line:not(.is-focus),
+.ac-chart.is-focusing .ac-area:not(.is-focus) {
+  opacity: 0.12;
+}
+
+.ac-chart.is-focusing .ac-line.is-focus {
+  stroke-width: 3.2;
+}
+
+.ac-area {
+  transition: opacity 0.2s ease;
+}
+
+.ac-hover-line {
+  stroke: var(--ac-axis);
+  stroke-dasharray: 3 3;
+}
+
+.ac-brush .selection {
+  fill: var(--tk-accent);
+  fill-opacity: 0.18;
+  stroke: var(--tk-accent);
+}
+
+.ac-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.4rem;
+}
+
+.ac-legend button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.5rem;
+  border: 1px solid var(--ac-panel-border);
+  border-radius: 999px;
+  background: var(--ac-panel);
+  color: var(--tk-text);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.ac-legend button.is-off {
+  opacity: 0.45;
+}
+
+.ac-legend button.is-off .ac-dot {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1.5px var(--tk-muted);
+}
+
+.ac-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.ac-legend small {
+  color: var(--tk-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ac-hint {
+  font-size: 0.78rem;
+  color: var(--tk-muted);
+}
+
+.ac-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 2rem 1rem;
+  color: var(--tk-muted);
+  text-align: center;
+}
+
+.ac-empty strong {
+  font-size: 1.05rem;
+  color: var(--tk-text);
+}
+
+/* ---------- Calendar ---------- */
+
+.ac-calendar {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ac-cal-block {
+  margin-bottom: 0.85rem;
+}
+
+.ac-cal-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+  font-size: 0.86rem;
+}
+
+.ac-cal-head strong {
+  cursor: pointer;
+}
+
+.ac-cal-head strong:hover {
+  color: var(--tk-accent);
+}
+
+.ac-cal-head span {
+  color: var(--tk-muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ac-cal-block svg text {
+  fill: var(--ac-axis);
+  font-size: 10px;
+  font-family: helvetica, arial, sans-serif;
+}
+
+.ac-cell {
+  cursor: pointer;
+  shape-rendering: crispEdges;
+}
+
+.ac-cell:hover {
+  stroke: var(--tk-text);
+  stroke-width: 1.5px;
+}
+
+.ac-cell.is-selected {
+  stroke: var(--tk-accent);
+  stroke-width: 2px;
+}
+
+.ac-cal-scale {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.75rem;
+  color: var(--tk-muted);
+}
+
+.ac-cal-scale i {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+
+.ac-daylist {
+  list-style: none;
+}
+
+.ac-daylist li {
+  padding: 0.35rem 0;
+  border-top: 1px solid var(--ac-panel-border);
+  font-size: 0.82rem;
+}
+
+.ac-daylist li:first-child {
+  border-top: 0;
+}
+
+.ac-daylist .ac-cl {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+
+.ac-daylist .ac-cl small {
+  margin-left: auto;
+  font-weight: 500;
+  color: var(--tk-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ac-daylist p {
+  color: var(--tk-muted);
+  word-break: break-word;
+}
+
+/* ---------- Freshness treemap ---------- */
+
+.ac-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem;
+  min-height: 1.5rem;
+  font-size: 0.85rem;
+}
+
+.ac-crumb {
+  border: 0;
+  background: transparent;
+  color: var(--tk-accent);
+  padding: 0.12rem 0.35rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: Consolas, "SF Mono", Menlo, monospace !important;
+}
+
+.ac-crumb:hover {
+  background: var(--tk-row-hover);
+}
+
+.ac-crumb-current {
+  color: var(--tk-text);
+  font-weight: 700;
+  cursor: default;
+}
+
+.ac-crumb-current:hover {
+  background: transparent;
+}
+
+.ac-crumb-sep {
+  color: var(--tk-muted);
+}
+
+.ac-map {
+  position: relative;
+  flex: 1;
+  min-height: 12rem;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--ac-map-bg);
+  box-shadow: inset 0 0 0 1px var(--ac-line);
+}
+
+.ac-node {
+  position: absolute;
+  overflow: hidden;
+  transition:
+    left 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+    top 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.35s ease,
+    background-color 0.6s ease;
+}
+
+.ac-node.ac-entering {
+  opacity: 0;
+}
+
+.ac-node.ac-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ac-map.no-anim .ac-node {
+  transition: none;
+}
+
+.ac-group {
+  border-radius: 7px;
+  background: rgba(127, 127, 127, 0.1);
+  box-shadow: inset 0 0 0 1px var(--ac-line);
+  cursor: zoom-in;
+}
+
+.ac-group:hover {
+  box-shadow: inset 0 0 0 2px var(--tk-accent);
+}
+
+.ac-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 22px;
+  padding: 0 0.45rem;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ac-head-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.ac-head-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ac-head-age {
+  margin-left: auto;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.ac-tile {
+  border-radius: 4px;
+  cursor: zoom-in;
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.ac-tile.is-leaf {
+  cursor: default;
+}
+
+.ac-tile:hover {
+  z-index: 3;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.95), 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.ac-tile.is-unknown {
+  background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0 3px, transparent 3px 8px);
+}
+
+.ac-label {
+  position: relative;
+  display: block;
+  padding: 3px 6px 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.ac-label-sub {
+  padding-top: 0;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.88;
+}
+
+.ac-age-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.8rem;
+  font-size: 0.8rem;
+  color: var(--tk-muted);
+}
+
+.ac-age-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ac-age-legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* ---------- Lists ---------- */
+
+.ac-list {
+  list-style: none;
+}
+
+.ac-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.15rem 0.5rem;
+  padding: 0.3rem 0.35rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tk-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ac-row:hover {
+  background: var(--tk-row-hover);
+}
+
+.ac-row-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.86rem;
+}
+
+.ac-row-name small {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--tk-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ac-row-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+/* ---------- People ---------- */
+
+.ac-people {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 0.7rem;
+}
+
+.ac-people-list {
+  width: 26rem;
+  flex: none;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ac-person {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.15rem 0.6rem;
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  margin-bottom: 0.4rem;
+  border: 1px solid var(--ac-panel-border);
+  border-radius: 10px;
+  background: var(--ac-panel);
+  color: var(--tk-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ac-person:hover {
+  border-color: var(--tk-accent);
+}
+
+.ac-person.is-active {
+  border-color: var(--tk-accent);
+  box-shadow: 0 0 0 1px var(--tk-accent) inset;
+}
+
+.ac-avatar {
+  grid-row: span 2;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.ac-person-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ac-person-name small {
+  margin-left: 0.35rem;
+  font-weight: 500;
+  color: var(--tk-muted);
+}
+
+.ac-person-stats {
+  font-size: 0.78rem;
+  color: var(--tk-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ac-person-stats strong {
+  color: var(--tk-text);
+  font-size: 0.9rem;
+}
+
+.ac-person-spark {
+  grid-column: 2 / 4;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ac-person-spark svg {
+  flex: 1;
+  height: 26px;
+}
+
+.ac-person-folders {
+  grid-column: 2 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.ac-tag {
+  padding: 0 0.4rem;
+  border-radius: 4px;
+  background: var(--tk-code-bg);
+  font-size: 0.72rem;
+  color: var(--tk-text);
+}
+
+.ac-matrix-wrap {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid var(--ac-panel-border);
+  border-radius: 10px;
+  background: var(--ac-chart-bg);
+  padding: 0.5rem;
+}
+
+.ac-matrix {
+  border-collapse: separate;
+  border-spacing: 3px;
+  font-size: 0.78rem;
+}
+
+.ac-matrix th {
+  font-weight: 600;
+  color: var(--tk-muted);
+  white-space: nowrap;
+}
+
+.ac-matrix thead th {
+  height: 7rem;
+  vertical-align: bottom;
+  padding: 0 0 0.3rem;
+}
+
+.ac-matrix thead th div {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  max-height: 7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 auto;
+  cursor: pointer;
+}
+
+.ac-matrix thead th div:hover,
+.ac-matrix tbody th:hover {
+  color: var(--tk-accent);
+}
+
+.ac-matrix tbody th {
+  text-align: right;
+  padding-right: 0.4rem;
+  cursor: pointer;
+}
+
+.ac-matrix td {
+  width: 34px;
+  min-width: 34px;
+  height: 26px;
+  border-radius: 4px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.ac-matrix td:hover {
+  outline: 2px solid var(--tk-text);
+}
+
+/* ---------- Tooltip ---------- */
+
+.ac-tooltip {
+  position: fixed;
+  z-index: 100;
+  max-width: 22rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.97);
+  color: #1f2430;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  font-family: helvetica, arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+body.dark-theme .ac-tooltip {
+  background: rgba(28, 31, 36, 0.97);
+  color: #eef1f6;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.ac-tooltip[hidden] {
+  display: none;
+}
+
+.ac-tt-title {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 0.2rem;
+}
+
+.ac-tt-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ac-tt-row .ac-dot {
+  width: 8px;
+  height: 8px;
+}
+
+.ac-tt-row span:nth-child(2) {
+  flex: 1;
+}
+
+.ac-tt-row strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.ac-tt-meta {
+  opacity: 0.7;
+}
+
+/* ---------- Animations ---------- */
+
+@keyframes ac-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ac-slide {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ac-node {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .ac-view,
+  .ac-people {
+    flex-direction: column;
+  }
+  .ac-side,
+  .ac-people-list {
+    width: auto;
+    max-height: 40%;
+  }
+}
+
+.ac-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--tk-text) !important;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ac-check input {
+  accent-color: var(--tk-accent);
+  margin: 0;
+}
+
+/* The shared theme styles every table; the grid needs none of that. */
+.ac-matrix th,
+.ac-matrix td {
+  border: 0 !important;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.ac-matrix tbody th {
+  font-weight: 600;
+  color: var(--tk-text);
+}
+
+/* Short ranges make narrow calendars: let them sit side by side. */
+.ac-calendar {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0 2rem;
+}

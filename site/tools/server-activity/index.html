@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Server Activity</title>
+    <script type="text/javascript">
+      var darktheme =
+        typeof p4vjs !== "undefined" && p4vjs.useDarkTheme && p4vjs.useDarkTheme();
+      document.write(
+        '<link rel="stylesheet" type="text/css" href="../../shared/' +
+          (darktheme ? "darkstyle.css" : "style.css") +
+          '" />'
+      );
+    </script>
+    <link rel="stylesheet" type="text/css" href="../../shared/toolkit.css" />
+    <link rel="stylesheet" type="text/css" href="server-activity.css" />
+    <script type="text/javascript" src="../../shared/vendor/d3.v7.9.0.min.js"></script>
+    <script type="text/javascript" src="../../shared/toolkit.js"></script>
+    <script type="text/javascript" src="activity-store.js"></script>
+    <script type="text/javascript" src="server-activity.js"></script>
+  </head>
+  <body class="ac-body">
+    <main class="tk-app ac-app">
+      <header class="ac-top">
+        <div class="ac-title">
+          <h1>Server Activity</h1>
+          <p class="tk-muted">Who's working where, and what's been changing.</p>
+        </div>
+        <form id="pathForm" class="ac-controls" autocomplete="off">
+          <input
+            id="pathInput"
+            class="ac-path"
+            type="text"
+            list="recentPaths"
+            spellcheck="false"
+            placeholder="//depot"
+            aria-label="Depot path"
+          />
+          <datalist id="recentPaths"></datalist>
+          <select id="rangeSelect" class="ac-select" aria-label="Time range">
+            <option value="30">Last 30 days</option>
+            <option value="90" selected>Last 90 days</option>
+            <option value="182">Last 6 months</option>
+            <option value="365">Last year</option>
+            <option value="730">Last 2 years</option>
+            <option value="all">All time</option>
+          </select>
+          <button type="submit" class="tk-btn tk-btn-primary">Show</button>
+          <button type="button" class="tk-btn ac-icon-btn" id="refreshButton" title="Check for new changelists" aria-label="Check for new changelists">
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M13.6 2.4A7.2 7.2 0 0 0 1 7h1.6a5.6 5.6 0 0 1 9.9-3.5L10 6h5V1l-1.4 1.4ZM13.4 9a5.6 5.6 0 0 1-9.9 3.5L6 10H1v5l1.4-1.4A7.2 7.2 0 0 0 15 9h-1.6Z"/></svg>
+          </button>
+        </form>
+      </header>
+
+      <div class="ac-statusbar" id="statusBar">
+        <span class="ac-status-main" id="statusText">Starting…</span>
+        <span class="ac-progress" id="progress" hidden><span id="progressBar"></span></span>
+        <span class="ac-status-actions" id="statusActions"></span>
+      </div>
+
+      <div id="notice" class="ac-notice" hidden></div>
+
+      <nav class="ac-tabs" id="tabs" role="tablist" aria-label="Views">
+        <button type="button" role="tab" data-view="trends" class="is-active">Trends</button>
+        <button type="button" role="tab" data-view="calendar">Calendar</button>
+        <button type="button" role="tab" data-view="freshness">Freshness</button>
+        <button type="button" role="tab" data-view="people">People</button>
+        <span class="ac-filters" id="filters"></span>
+      </nav>
+
+      <section class="ac-cards" id="cards" aria-label="Summary"></section>
+
+      <section class="ac-view" id="view"></section>
+    </main>
+    <div class="ac-tooltip" id="tooltip" hidden></div>
+  </body>
+</html>
