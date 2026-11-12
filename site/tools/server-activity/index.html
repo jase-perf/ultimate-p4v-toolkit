@@ -27,25 +27,15 @@
           <p class="tk-muted">Who's working where, and what's been changing.</p>
         </div>
         <form id="pathForm" class="ac-controls" autocomplete="off">
-          <div class="ac-pathbox" id="pathBox">
-            <input
-              id="pathInput"
-              class="ac-path"
-              type="text"
-              spellcheck="false"
-              autocomplete="off"
-              placeholder="Pick a depot or type a path"
-              aria-label="Depot path"
-              role="combobox"
-              aria-autocomplete="list"
-              aria-expanded="false"
-              aria-controls="pathMenu"
-            />
-            <button type="button" class="ac-path-toggle" id="pathToggle" tabindex="-1" aria-label="Show depots and recent paths">
-              <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path fill="currentColor" d="M2 4h8L6 8.5z"/></svg>
-            </button>
-            <ul class="ac-path-menu" id="pathMenu" role="listbox" hidden></ul>
-          </div>
+          <input
+            id="pathInput"
+            class="ac-path"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="Pick a depot or type a path"
+            aria-label="Depot path"
+          />
           <select id="rangeSelect" class="ac-select" aria-label="Time range">
             <option value="30">Last 30 days</option>
             <option value="90" selected>Last 90 days</option>

@@ -464,6 +464,203 @@ const Toolkit = (() => {
     return `${count} ${count === 1 ? word : pluralWord || `${word}s`}`;
   }
 
+  // ---------------------------------------------------------------------------
+  // Depot picker and URL state, shared by the tabs that take a path
+  // ---------------------------------------------------------------------------
+
+  /**
+   * The depots that hold files, from `p4 depots`. P4V names the field "Depot"
+   * rather than the server's "name", so read either; skip any without a name.
+   * @returns {{ path: string, hint: string }[]}
+   */
+  function depotsFrom(rows) {
+    return (rows || [])
+      .filter((row) => /^(local|stream|tangent)$/i.test(field(row, "type")))
+      .map((row) => ({ name: field(row, "name") || field(row, "Depot"), hint: field(row, "type").toLowerCase() }))
+      .filter((d) => d.name)
+      .map((d) => ({ path: `//${d.name}`, hint: d.hint }))
+      .sort((a, b) => a.path.localeCompare(b.path, undefined, { sensitivity: "base" }));
+  }
+
+  const TOGGLE_SVG = '<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path fill="currentColor" d="M2 4h8L6 8.5z"/></svg>';
+
+  /**
+   * Turn a path text box into a drop-down of recent paths and every depot,
+   * filtered as you type. Clicking into the box selects its text so typing
+   * replaces it. Choosing an entry submits the form.
+   * @param {{ input: HTMLInputElement, form: HTMLFormElement, recent: () => string[], allDepots?: string, suffix?: string }} options
+   *   allDepots: the path offered for "all depots" ("//" by default, "" to leave it out);
+   *   suffix: added to a chosen depot (Project Activity wants "/...").
+   */
+  function pathPicker({ input, form, recent, allDepots = "//", suffix = "" }) {
+    const box = el("div", { className: "tk-pathbox" });
+    input.parentNode.insertBefore(box, input);
+    box.appendChild(input);
+    const menuId = `${input.id || "path"}Menu`;
+    Object.entries({
+      role: "combobox",
+      autocomplete: "off",
+      "aria-autocomplete": "list",
+      "aria-expanded": "false",
+      "aria-controls": menuId,
+    }).forEach(([key, value]) => input.setAttribute(key, value));
+    const toggle = el("button", { type: "button", className: "tk-path-toggle", tabindex: "-1", "aria-label": "Show depots and recent paths" });
+    toggle.innerHTML = TOGGLE_SVG;
+    const menu = el("ul", { className: "tk-path-menu", id: menuId, role: "listbox", hidden: true });
+    box.append(toggle, menu);
+
+    let depots = [];
+    let filtering = false; // true once the user types; the arrow shows everything
+    let active = -1;
+    let options = [];
+    const isOpen = () => !menu.hidden;
+    const withSuffix = (path) => (suffix ? `${path}${suffix}` : path);
+
+    function groups() {
+      const typed = filtering ? input.value.trim().toLowerCase() : "";
+      const match = (item) => !typed || item.path.toLowerCase().includes(typed) || item.shown.toLowerCase().includes(typed);
+      const all = allDepots ? [{ path: allDepots, shown: "// (All depots)", hint: "everything" }] : [];
+      const recents = (recent() || []).map((path) => ({ path, shown: path === "//" || path === "//..." ? `${path} (All depots)` : path }));
+      return [
+        ["Recent", recents.filter(match)],
+        ["Depots", [...all, ...depots.map((d) => ({ path: withSuffix(d.path), shown: d.path, hint: d.hint }))].filter(match)],
+      ].filter(([, items]) => items.length);
+    }
+
+    function render() {
+      options = [];
+      const nodes = [];
+      for (const [title, items] of groups()) {
+        nodes.push(el("li", { className: "tk-path-group", role: "presentation" }, title));
+        for (const item of items) {
+          const index = options.length;
+          options.push(item.path);
+          const option = el(
+            "li",
+            { role: "option", id: `${menuId}${index}`, title: item.path },
+            el("span", {}, item.shown),
+            item.hint ? el("small", {}, item.hint) : null
+          );
+          option.addEventListener("mousedown", (event) => event.preventDefault()); // keep focus in the box
+          option.addEventListener("click", () => choose(item.path));
+          nodes.push(option);
+        }
+      }
+      if (!options.length) nodes.push(el("li", { className: "tk-path-none", role: "presentation" }, "No matching depots. Press Enter to use what you typed."));
+      menu.replaceChildren(...nodes);
+      highlight(Math.min(active, options.length - 1));
+    }
+
+    function highlight(index) {
+      active = index;
+      menu.querySelectorAll("[role=option]").forEach((node, i) => node.classList.toggle("is-active", i === index));
+      const node = index >= 0 ? document.getElementById(`${menuId}${index}`) : null;
+      if (node) {
+        node.scrollIntoView({ block: "nearest" });
+        input.setAttribute("aria-activedescendant", node.id);
+      } else {
+        input.removeAttribute("aria-activedescendant");
+      }
+    }
+
+    function open(typed) {
+      filtering = typed;
+      active = -1;
+      menu.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+      render();
+    }
+
+    function close() {
+      menu.hidden = true;
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
+      active = -1;
+    }
+
+    function choose(path) {
+      input.value = path;
+      close();
+      form.requestSubmit();
+    }
+
+    async function loadDepots() {
+      if (!inP4V()) return;
+      const result = await tryRun(["depots"]);
+      depots = depotsFrom(result.data);
+      if (isOpen()) render();
+    }
+
+    // Clicking into the box selects its text, so typing replaces it (dragging still selects part of it).
+    let clickFocus = false;
+    input.addEventListener("mousedown", () => {
+      clickFocus = document.activeElement !== input;
+    });
+    input.addEventListener("focus", () => {
+      if (!clickFocus) input.select(); // tabbed in
+    });
+    input.addEventListener("mouseup", () => {
+      if (clickFocus && input.selectionStart === input.selectionEnd) input.select(); // a click, not a drag
+      clickFocus = false;
+    });
+    input.addEventListener("input", () => open(true));
+    input.addEventListener("blur", () => setTimeout(() => document.activeElement !== input && close(), 120));
+    input.addEventListener("keydown", (event) => {
+      const count = options.length;
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        if (!isOpen()) return open(false);
+        if (!count) return;
+        const step = event.key === "ArrowDown" ? 1 : -1;
+        highlight((active + step + count) % count);
+      } else if (event.key === "Enter" && isOpen() && active >= 0) {
+        event.preventDefault();
+        choose(options[active]);
+      } else if (event.key === "Escape" && isOpen()) {
+        event.preventDefault();
+        event.stopPropagation();
+        close();
+      } else if (event.key === "Enter") {
+        close();
+      }
+    });
+    toggle.addEventListener("mousedown", (event) => event.preventDefault());
+    toggle.addEventListener("click", () => {
+      if (isOpen()) return close();
+      input.focus();
+      open(false);
+    });
+
+    loadDepots();
+    return { close, isOpen, loadDepots, depots: () => depots };
+  }
+
+  /**
+   * Where a tab is, kept in its URL so P4V's Back and Forward work.
+   * write() keeps any parameters it isn't given (P4V may add its own) and drops empty ones.
+   */
+  const urlState = {
+    read() {
+      return new URLSearchParams(location.search);
+    },
+    write(values, push) {
+      const params = new URLSearchParams(location.search);
+      for (const [key, value] of Object.entries(values)) {
+        if (value === null || value === undefined || value === "" || value === false) params.delete(key);
+        else params.set(key, value === true ? "1" : String(value));
+      }
+      const query = params.toString().replace(/%2F/gi, "/"); // keep paths readable
+      const url = `${location.pathname}${query ? `?${query}` : ""}${location.hash}`;
+      if (url === `${location.pathname}${location.search}${location.hash}`) return;
+      try {
+        if (push) history.pushState(null, "", url);
+        else history.replaceState(null, "", url);
+      } catch (err) {
+        // some hosts refuse history changes; the page still works without it
+      }
+    },
+  };
+
   return {
     ACCESS_ORDER,
     P4Error,
@@ -494,6 +691,9 @@ const Toolkit = (() => {
     setStatus,
     formatTime,
     plural,
+    depotsFrom,
+    pathPicker,
+    urlState,
   };
 })();
 

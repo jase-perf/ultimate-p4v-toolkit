@@ -59,6 +59,7 @@
   const scans = new Map(); // "mode|shelved|path" -> { files, capped, error } | "running"
   const fstats = new Map(); // depot file -> fstat -Oc row
   let ui = {};
+  let picker = null;
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -336,10 +337,12 @@
   // Navigation
   // ---------------------------------------------------------------------------
 
-  async function show(path) {
+  async function show(path, { push = true } = {}) {
     const token = ++state.token;
     const stale = () => token !== state.token;
     state.focus = path;
+    if (document.activeElement !== ui.path) ui.path.value = path;
+    syncUrl(push);
     if (state.pinned && parentOf(state.pinned.path) !== path) state.pinned = null;
     hideTooltip();
     hideNotice();
@@ -1117,7 +1120,43 @@
   function remember(path) {
     const recent = [path, ...store.get("recent", []).filter((p) => p !== path)].slice(0, 8);
     store.set("recent", recent);
-    ui.recent.replaceChildren(...recent.map((p) => el("option", { value: p })));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Where you are, kept in the URL so P4V's Back and Forward work
+  // ---------------------------------------------------------------------------
+
+  /** Record the folder and measure: a new history entry, or (push = false) an update of this one. */
+  function syncUrl(push) {
+    if (!state.focus) return;
+    Toolkit.urlState.write({ path: state.focus, measure: state.mode === "history" ? "all" : null, shelved: state.shelved }, push);
+  }
+
+  function fromUrl() {
+    const params = Toolkit.urlState.read();
+    return { path: params.get("path") || "", mode: params.get("measure") === "all" ? "history" : "latest", shelved: params.get("shelved") === "1" };
+  }
+
+  /** Set the measure and shelved switches without saving them or touching history. */
+  function applySwitches(mode, shelved) {
+    state.mode = mode;
+    state.shelved = shelved;
+    setSegment(ui.sizeMode, state.mode);
+    ui.shelved.checked = state.shelved;
+    ui.shelvedLabel.classList.toggle("is-on", state.shelved);
+    ui.modeNote.textContent = MODE_NOTES[state.mode];
+  }
+
+  /** Back or Forward: put everything back the way the URL says. */
+  function applyUrl() {
+    const wanted = fromUrl();
+    if (!wanted.path) return;
+    if (wanted.mode !== state.mode || wanted.shelved !== state.shelved) {
+      applySwitches(wanted.mode, wanted.shelved);
+      state.firstDraw = true;
+    }
+    state.pinned = null;
+    show(wanted.path, { push: false });
   }
 
   function setSegment(group, value) {
@@ -1134,7 +1173,6 @@
     ui = {
       form: $("pathForm"),
       path: $("pathInput"),
-      recent: $("recentPaths"),
       sizeMode: $("sizeMode"),
       shelved: $("shelvedToggle"),
       shelvedLabel: $("shelvedLabel"),
@@ -1168,13 +1206,11 @@
       return;
     }
 
-    state.mode = store.get("mode", "latest") === "history" ? "history" : "latest";
-    state.shelved = !!store.get("shelved", false);
-    setSegment(ui.sizeMode, state.mode);
-    ui.shelved.checked = state.shelved;
-    ui.shelvedLabel.classList.toggle("is-on", state.shelved);
-    ui.modeNote.textContent = MODE_NOTES[state.mode];
-    ui.recent.replaceChildren(...store.get("recent", []).map((p) => el("option", { value: p })));
+    // A URL with a path (a reload, or Back into this page) wins over the saved switches.
+    const wanted = fromUrl();
+    if (wanted.path) applySwitches(wanted.mode, wanted.shelved);
+    else applySwitches(store.get("mode", "latest") === "history" ? "history" : "latest", !!store.get("shelved", false));
+    picker = Toolkit.pathPicker({ input: ui.path, form: ui.form, recent: () => store.get("recent", []) });
 
     ui.form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -1205,6 +1241,7 @@
       state.shelved = ui.shelved.checked;
       store.set("shelved", state.shelved);
       ui.shelvedLabel.classList.toggle("is-on", state.shelved);
+      syncUrl(true);
       if (!state.focus) return;
       if (state.pinned && state.pinned.shelved && !state.shelved) state.pinned = null;
       render();
@@ -1256,6 +1293,12 @@
       return;
     }
 
+    window.addEventListener("popstate", applyUrl);
+    if (wanted.path) {
+      show(wanted.path, { push: false });
+      return;
+    }
+
     ui.overlay.hidden = false;
     ui.overlayText.textContent = "Finding your workspace…";
     const start = await normalizeInput((await defaultPath().catch(() => "")) || store.get("recent", [])[0] || "");
@@ -1265,7 +1308,7 @@
       return;
     }
     ui.path.value = start;
-    show(start);
+    show(start, { push: false });
   }
 
   document.addEventListener("DOMContentLoaded", init);

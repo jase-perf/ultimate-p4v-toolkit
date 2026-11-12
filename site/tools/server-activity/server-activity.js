@@ -83,6 +83,7 @@
     error: "",
   };
   let ui = {};
+  let picker = null;
 
   // ---------------------------------------------------------------------------
   // Small helpers
@@ -142,18 +143,6 @@
   const timeOf = (row) => Toolkit.changeTime(row, state.serverOffset);
   const goodTime = (t) => Number.isFinite(t) && t > 0;
   const descOf = (row) => Toolkit.changeDesc(row).split(/\r?\n/)[0].slice(0, 160);
-
-  /**
-   * The depots that hold files, from `p4 depots`. P4V names the field "Depot"
-   * rather than the server's "name", so read either; skip any without a name.
-   */
-  function depotRows(rows) {
-    return rows
-      .filter((row) => /^(local|stream|tangent)$/i.test(field(row, "type")))
-      .map((row) => ({ name: field(row, "name") || field(row, "Depot"), hint: field(row, "type").toLowerCase() }))
-      .filter((d) => d.name)
-      .map((d) => ({ path: `//${d.name}`, hint: d.hint }));
-  }
 
   const wild = (path) => (path === "//" ? "//..." : `${path}/...`);
   const childPath = (key) => (state.root === "//" ? `//${key}` : `${state.root}/${key}`);
@@ -529,30 +518,20 @@
     return childPath(state.filter.folder);
   }
 
-  function urlFor() {
-    const params = new URLSearchParams(location.search); // keep anything P4V put there
-    const set = (key, value) => (value === null || value === undefined || value === "" ? params.delete(key) : params.set(key, value));
-    set("path", state.root);
-    set("folder", state.filter.folder);
-    set("user", state.filter.user);
-    set("view", state.view);
-    set("range", state.range);
-    set("people", state.view === "people" ? state.people.mode : null);
-    const query = params.toString();
-    return `${location.pathname}${query ? `?${query}` : ""}${location.hash}`;
-  }
-
   /** Record the current view in the URL: a new history entry, or (push = false) an update of this one. */
   function syncUrl(push) {
     if (!state.scope) return;
-    const url = urlFor();
-    if (url === `${location.pathname}${location.search}${location.hash}`) return;
-    try {
-      if (push) history.pushState(null, "", url);
-      else history.replaceState(null, "", url);
-    } catch (err) {
-      // some hosts refuse history changes; navigation still works without it
-    }
+    Toolkit.urlState.write(
+      {
+        path: state.root,
+        folder: state.filter.folder,
+        user: state.filter.user,
+        view: state.view,
+        range: state.range,
+        people: state.view === "people" ? state.people.mode : null,
+      },
+      push
+    );
   }
 
   function fromUrl() {
@@ -1638,7 +1617,7 @@
       const found = new Map(todo.map((p) => [p, []]));
       if (found.has("//")) {
         const result = await Toolkit.tryRun(["depots"]);
-        found.set("//", depotRows(result.data).map((d) => d.path));
+        found.set("//", Toolkit.depotsFrom(result.data).map((d) => d.path));
       }
       const folders = todo.filter((p) => p !== "//");
       for (let i = 0; i < folders.length; i += 100) {
@@ -2262,134 +2241,6 @@
     store.set("recent", recent);
   }
 
-  // ---------------------------------------------------------------------------
-  // Path picker: every depot plus recent paths, filtered as you type
-  // ---------------------------------------------------------------------------
-
-  const picker = {
-    depots: [],
-    filtering: false, // true once the user types; the arrow shows everything
-    active: -1,
-    options: [],
-
-    async loadDepots() {
-      const result = await Toolkit.tryRun(["depots"]);
-      picker.depots = depotRows(result.data).sort((a, b) => a.path.localeCompare(b.path, undefined, { sensitivity: "base" }));
-      if (picker.isOpen()) picker.render();
-    },
-
-    isOpen: () => !ui.pathMenu.hidden,
-
-    groups() {
-      const typed = picker.filtering ? ui.path.value.trim().toLowerCase() : "";
-      const match = (item) => !typed || item.path.toLowerCase().includes(typed) || (item.label || "").toLowerCase().includes(typed);
-      const recent = store.get("recent", []).map((path) => ({ path, label: path === "//" ? "All depots" : "" }));
-      const depots = [{ path: "//", label: "All depots", hint: "everything" }, ...picker.depots];
-      return [
-        ["Recent", recent.filter(match)],
-        ["Depots", depots.filter(match)],
-      ].filter(([, items]) => items.length);
-    },
-
-    render() {
-      picker.options = [];
-      const groups = picker.groups();
-      const nodes = [];
-      for (const [title, items] of groups) {
-        nodes.push(el("li", { className: "ac-path-group", role: "presentation" }, title));
-        for (const item of items) {
-          const index = picker.options.length;
-          picker.options.push(item.path);
-          const option = el(
-            "li",
-            { role: "option", id: `pathOption${index}`, title: item.path },
-            el("span", {}, item.label && item.path === "//" ? `// (${item.label})` : item.path),
-            item.hint ? el("small", {}, item.hint) : null
-          );
-          option.addEventListener("mousedown", (event) => event.preventDefault()); // keep focus in the box
-          option.addEventListener("click", () => picker.choose(item.path));
-          nodes.push(option);
-        }
-      }
-      if (!picker.options.length) nodes.push(el("li", { className: "ac-path-none", role: "presentation" }, "No matching depots. Press Enter to use what you typed."));
-      ui.pathMenu.replaceChildren(...nodes);
-      picker.highlight(Math.min(picker.active, picker.options.length - 1));
-    },
-
-    highlight(index) {
-      picker.active = index;
-      ui.pathMenu.querySelectorAll("[role=option]").forEach((node, i) => node.classList.toggle("is-active", i === index));
-      const node = index >= 0 ? document.getElementById(`pathOption${index}`) : null;
-      if (node) {
-        node.scrollIntoView({ block: "nearest" });
-        ui.path.setAttribute("aria-activedescendant", node.id);
-      } else {
-        ui.path.removeAttribute("aria-activedescendant");
-      }
-    },
-
-    open(filtering) {
-      picker.filtering = filtering;
-      picker.active = -1;
-      ui.pathMenu.hidden = false;
-      ui.path.setAttribute("aria-expanded", "true");
-      picker.render();
-    },
-
-    close() {
-      ui.pathMenu.hidden = true;
-      ui.path.setAttribute("aria-expanded", "false");
-      ui.path.removeAttribute("aria-activedescendant");
-      picker.active = -1;
-    },
-
-    choose(path) {
-      ui.path.value = path;
-      picker.close();
-      ui.form.requestSubmit();
-    },
-
-    wire() {
-      // Clicking into the box selects its text, so typing replaces it (dragging still selects part of it).
-      let clickFocus = false;
-      ui.path.addEventListener("mousedown", () => {
-        clickFocus = document.activeElement !== ui.path;
-      });
-      ui.path.addEventListener("focus", () => {
-        if (!clickFocus) ui.path.select(); // tabbed in
-      });
-      ui.path.addEventListener("mouseup", () => {
-        if (clickFocus && ui.path.selectionStart === ui.path.selectionEnd) ui.path.select(); // a click, not a drag
-        clickFocus = false;
-      });
-      ui.path.addEventListener("input", () => picker.open(true));
-      ui.path.addEventListener("blur", () => setTimeout(() => document.activeElement !== ui.path && picker.close(), 120));
-      ui.path.addEventListener("keydown", (event) => {
-        const count = picker.options.length;
-        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-          event.preventDefault();
-          if (!picker.isOpen()) return picker.open(false);
-          if (!count) return;
-          const step = event.key === "ArrowDown" ? 1 : -1;
-          picker.highlight((picker.active + step + count) % count);
-        } else if (event.key === "Enter" && picker.isOpen() && picker.active >= 0) {
-          event.preventDefault();
-          picker.choose(picker.options[picker.active]);
-        } else if (event.key === "Escape" && picker.isOpen()) {
-          event.preventDefault();
-          picker.close();
-        } else if (event.key === "Enter") {
-          picker.close();
-        }
-      });
-      ui.pathToggle.addEventListener("mousedown", (event) => event.preventDefault());
-      ui.pathToggle.addEventListener("click", () => {
-        if (picker.isOpen()) return picker.close();
-        ui.path.focus();
-        picker.open(false);
-      });
-    },
-  };
 
   async function init() {
     Toolkit.applyTheme();
@@ -2398,8 +2249,6 @@
     ui = {
       form: $("pathForm"),
       path: $("pathInput"),
-      pathMenu: $("pathMenu"),
-      pathToggle: $("pathToggle"),
       range: $("rangeSelect"),
       refresh: $("refreshButton"),
       statusText: $("statusText"),
@@ -2427,7 +2276,7 @@
     state.calendar.metric = store.get("calendarMetric", "changes");
     state.people.mode = store.get("peopleMode", "activity") === "where" ? "where" : "activity";
     state.includeMerges = store.get("includeMerges", true) !== false;
-    picker.wire();
+    picker = Toolkit.pathPicker({ input: ui.path, form: ui.form, recent: () => store.get("recent", []) });
 
     ui.form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -2514,7 +2363,6 @@
     // "2026/11/12 10:34:22 -0800 PST": dates in changelist forms are in this zone.
     const zone = field(row, "serverDate").match(/\s([+-])(\d{2})(\d{2})\b/);
     if (zone) state.serverOffset = (zone[1] === "-" ? -1 : 1) * (Number(zone[2]) * 60 + Number(zone[3]));
-    picker.loadDepots();
 
     window.addEventListener("popstate", applyUrl);
 

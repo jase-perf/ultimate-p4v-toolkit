@@ -52,10 +52,12 @@
     loading: false,
     timer: 0,
     animateNext: true,
+    loadedText: "", // the path text last mapped
   };
 
   const me = () => Toolkit.currentUser();
   let ui = {};
+  let picker = null;
 
   // ---------------------------------------------------------------------------
   // Small helpers
@@ -230,7 +232,7 @@
     return state.clients.get(name);
   }
 
-  async function load({ quiet = false } = {}) {
+  async function load({ quiet = false, push = false } = {}) {
     if (state.loading) return;
     const text = ui.path.value.trim();
     const paths = readPaths(text);
@@ -273,6 +275,8 @@
       }
 
       remember(text);
+      state.loadedText = text;
+      syncUrl(push);
       await Promise.all([loadNames(rows), loadChanges(depotPaths)]);
 
       if (warnings.length) showNotice("warning", "Heads up", warnings);
@@ -292,11 +296,6 @@
   function remember(text) {
     const recent = [text, ...store.get("recent", []).filter((p) => p !== text)].slice(0, 8);
     store.set("recent", recent);
-    renderRecent(recent);
-  }
-
-  function renderRecent(recent) {
-    ui.recent.replaceChildren(...recent.map((path) => el("option", { value: path })));
   }
 
   // ---------------------------------------------------------------------------
@@ -432,6 +431,8 @@
     renderCrumbs();
     renderSide();
     renderLegend();
+    if (document.activeElement !== ui.path && state.loadedText) ui.path.value = state.loadedText;
+    syncUrl(false);
   }
 
   function clearMap() {
@@ -627,11 +628,43 @@
   // Interaction
   // ---------------------------------------------------------------------------
 
-  function zoomTo(path) {
+  function zoomTo(path, { push = true } = {}) {
     state.focusPath = path;
     state.animateNext = true;
+    if (push) syncUrl(true);
     hideTooltip();
     renderAll();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Where you are, kept in the URL so P4V's Back and Forward work
+  // ---------------------------------------------------------------------------
+
+  /** Record the path, zoom and colouring: a new history entry, or (push = false) an update of this one. */
+  function syncUrl(push) {
+    if (!state.loadedText) return;
+    Toolkit.urlState.write({ path: state.loadedText, zoom: state.focusPath, color: state.colorMode === "action" ? "action" : null }, push);
+  }
+
+  function fromUrl() {
+    const params = Toolkit.urlState.read();
+    return { path: params.get("path") || "", zoom: params.get("zoom") || "", color: params.get("color") === "action" ? "action" : "person" };
+  }
+
+  /** Back or Forward: put everything back the way the URL says. */
+  function applyUrl() {
+    const wanted = fromUrl();
+    if (wanted.color !== state.colorMode) setColorMode(wanted.color, { push: false });
+    state.pinnedPath = "";
+    if (wanted.path && wanted.path !== state.loadedText) {
+      ui.path.value = wanted.path;
+      state.focusPath = wanted.zoom;
+      state.knownKeys = null;
+      load();
+      return;
+    }
+    if (wanted.zoom !== state.focusPath) zoomTo(wanted.zoom, { push: false });
+    else renderDetails();
   }
 
   function onNodeClick(event, d) {
@@ -992,6 +1025,7 @@
                 state.focusPath = d.parent ? d.parent.data.path : "";
                 state.pinnedPath = d.data.path;
                 state.animateNext = true;
+                syncUrl(true);
                 renderAll();
               },
             },
@@ -1139,13 +1173,14 @@
     }
   }
 
-  function setColorMode(mode) {
+  function setColorMode(mode, { push = true } = {}) {
     state.colorMode = mode;
     store.set("colorMode", mode);
     for (const button of ui.segment.querySelectorAll("button")) {
       button.classList.toggle("is-active", button.dataset.mode === mode);
     }
     if (state.spot && state.spot.kind === "action" && mode !== "action") state.spot = null;
+    if (push) syncUrl(true);
     renderAll();
   }
 
@@ -1157,7 +1192,6 @@
     ui = {
       form: $("pathForm"),
       path: $("pathInput"),
-      recent: $("recentPaths"),
       refresh: $("refreshButton"),
       live: $("liveToggle"),
       liveLabel: $("liveToggle").closest("label"),
@@ -1192,7 +1226,7 @@
       state.focusPath = "";
       state.pinnedPath = "";
       state.knownKeys = null;
-      load();
+      load({ push: true });
     });
     ui.refresh.addEventListener("click", () => load());
     ui.live.addEventListener("change", () => setLive(ui.live.checked));
@@ -1228,12 +1262,13 @@
       }, 80);
     }).observe(ui.map);
 
-    renderRecent(store.get("recent", []));
-    state.colorMode = store.get("colorMode", "person") === "action" ? "action" : "person";
+    const wanted = fromUrl();
+    state.colorMode = wanted.path ? wanted.color : store.get("colorMode", "person") === "action" ? "action" : "person";
     for (const button of ui.segment.querySelectorAll("button")) {
       button.classList.toggle("is-active", button.dataset.mode === state.colorMode);
     }
     renderLegend();
+    picker = Toolkit.pathPicker({ input: ui.path, form: ui.form, recent: () => store.get("recent", []), allDepots: "//...", suffix: "/..." });
 
     if (!Toolkit.inP4V()) {
       showNotice("info", "Open this page from P4V", [
@@ -1244,6 +1279,16 @@
 
     ui.live.checked = !!store.get("live", false);
     setLive(ui.live.checked);
+
+    window.addEventListener("popstate", applyUrl);
+
+    // A URL with a path (a reload, or Back into this page) wins over the selection and workspace.
+    if (wanted.path) {
+      ui.path.value = wanted.path;
+      state.focusPath = wanted.zoom;
+      load();
+      return;
+    }
 
     showOverlay("Finding your workspace…");
     const paths = await defaultPaths().catch(() => []);
