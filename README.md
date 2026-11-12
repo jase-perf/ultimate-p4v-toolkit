@@ -20,7 +20,7 @@ Work in progress.
 
 ## Where your data goes
 
-The tools are served from GitHub Pages, but that only delivers the HTML and JavaScript. Once open, a tool reads from your P4 Server through P4V with your login, and does all its processing on your computer. No server data is sent anywhere else, and Server Activity's saved history stays local. The two exceptions are deliberate: AI Help sends your question to Perforce's AI support service, and the Typemap Editor downloads its templates from GitHub (it sends nothing).
+The tools get their data from your P4 Server through P4V with your login, and do all their processing on your computer. Nothing from your server is ever sent anywhere else, and Server Activity's saved history stays local. The one exception is AI Help, which sends the question you type to Perforce's official AI support assistant.
 
 Tools that need elevated access check the current user's access level when they open. Users without it get a clear explanation instead of a raw permission error.
 
