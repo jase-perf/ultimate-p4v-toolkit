@@ -536,8 +536,16 @@
       const where = state.persistent ? "Saved on this computer" : "Kept in memory (this P4V doesn't allow saving)";
       parts.push(el("span", { className: `ac-status-dot${state.persistent ? "" : " is-memory"}`, title: where }));
       if (count) {
-        const back = since === -Infinity ? "the very first changelist" : since && since !== Infinity ? fmtShort(dateOf(since)) : "";
-        parts.push(el("span", {}, `${where}: ${fmt(count)} changelists${back ? `, complete back to ${back}` : ""}`));
+        const under = state.root === "//" ? "in all depots" : `under ${state.root}`;
+        let text;
+        if (since === -Infinity) {
+          const first = d3.min(state.records.values(), (r) => r.t);
+          text = `all ${fmt(count)} changelists ${under}, back to the first on ${fmtShort(dateOf(first))}`;
+        } else {
+          const back = since && since !== Infinity ? `, complete back to ${fmtShort(dateOf(since))}` : "";
+          text = `${fmt(count)} changelists ${under}${back}`;
+        }
+        parts.push(el("span", {}, `${where}: ${text}`));
       } else if (state.scope) {
         parts.push(el("span", {}, state.error ? "Couldn't read history." : "No submitted changelists found here."));
       }
@@ -2143,8 +2151,139 @@
   function remember(path) {
     const recent = [path, ...store.get("recent", []).filter((p) => p !== path)].slice(0, 8);
     store.set("recent", recent);
-    ui.recent.replaceChildren(...recent.map((p) => el("option", { value: p })));
   }
+
+  // ---------------------------------------------------------------------------
+  // Path picker: every depot plus recent paths, filtered as you type
+  // ---------------------------------------------------------------------------
+
+  const picker = {
+    depots: [],
+    filtering: false, // true once the user types; the arrow shows everything
+    active: -1,
+    options: [],
+
+    async loadDepots() {
+      const result = await Toolkit.tryRun(["depots"]);
+      picker.depots = result.data
+        .filter((row) => /^(local|stream|tangent)$/i.test(field(row, "type")))
+        .map((row) => ({ path: `//${field(row, "name")}`, hint: field(row, "type").toLowerCase() }))
+        .sort((a, b) => a.path.localeCompare(b.path, undefined, { sensitivity: "base" }));
+      if (picker.isOpen()) picker.render();
+    },
+
+    isOpen: () => !ui.pathMenu.hidden,
+
+    groups() {
+      const typed = picker.filtering ? ui.path.value.trim().toLowerCase() : "";
+      const match = (item) => !typed || item.path.toLowerCase().includes(typed) || (item.label || "").toLowerCase().includes(typed);
+      const recent = store.get("recent", []).map((path) => ({ path, label: path === "//" ? "All depots" : "" }));
+      const depots = [{ path: "//", label: "All depots", hint: "everything" }, ...picker.depots];
+      return [
+        ["Recent", recent.filter(match)],
+        ["Depots", depots.filter(match)],
+      ].filter(([, items]) => items.length);
+    },
+
+    render() {
+      picker.options = [];
+      const groups = picker.groups();
+      const nodes = [];
+      for (const [title, items] of groups) {
+        nodes.push(el("li", { className: "ac-path-group", role: "presentation" }, title));
+        for (const item of items) {
+          const index = picker.options.length;
+          picker.options.push(item.path);
+          const option = el(
+            "li",
+            { role: "option", id: `pathOption${index}`, title: item.path },
+            el("span", {}, item.label && item.path === "//" ? `// (${item.label})` : item.path),
+            item.hint ? el("small", {}, item.hint) : null
+          );
+          option.addEventListener("mousedown", (event) => event.preventDefault()); // keep focus in the box
+          option.addEventListener("click", () => picker.choose(item.path));
+          nodes.push(option);
+        }
+      }
+      if (!picker.options.length) nodes.push(el("li", { className: "ac-path-none", role: "presentation" }, "No matching depots. Press Enter to use what you typed."));
+      ui.pathMenu.replaceChildren(...nodes);
+      picker.highlight(Math.min(picker.active, picker.options.length - 1));
+    },
+
+    highlight(index) {
+      picker.active = index;
+      ui.pathMenu.querySelectorAll("[role=option]").forEach((node, i) => node.classList.toggle("is-active", i === index));
+      const node = index >= 0 ? document.getElementById(`pathOption${index}`) : null;
+      if (node) {
+        node.scrollIntoView({ block: "nearest" });
+        ui.path.setAttribute("aria-activedescendant", node.id);
+      } else {
+        ui.path.removeAttribute("aria-activedescendant");
+      }
+    },
+
+    open(filtering) {
+      picker.filtering = filtering;
+      picker.active = -1;
+      ui.pathMenu.hidden = false;
+      ui.path.setAttribute("aria-expanded", "true");
+      picker.render();
+    },
+
+    close() {
+      ui.pathMenu.hidden = true;
+      ui.path.setAttribute("aria-expanded", "false");
+      ui.path.removeAttribute("aria-activedescendant");
+      picker.active = -1;
+    },
+
+    choose(path) {
+      ui.path.value = path;
+      picker.close();
+      ui.form.requestSubmit();
+    },
+
+    wire() {
+      // Clicking into the box selects its text, so typing replaces it (dragging still selects part of it).
+      let clickFocus = false;
+      ui.path.addEventListener("mousedown", () => {
+        clickFocus = document.activeElement !== ui.path;
+      });
+      ui.path.addEventListener("focus", () => {
+        if (!clickFocus) ui.path.select(); // tabbed in
+      });
+      ui.path.addEventListener("mouseup", () => {
+        if (clickFocus && ui.path.selectionStart === ui.path.selectionEnd) ui.path.select(); // a click, not a drag
+        clickFocus = false;
+      });
+      ui.path.addEventListener("input", () => picker.open(true));
+      ui.path.addEventListener("blur", () => setTimeout(() => document.activeElement !== ui.path && picker.close(), 120));
+      ui.path.addEventListener("keydown", (event) => {
+        const count = picker.options.length;
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          if (!picker.isOpen()) return picker.open(false);
+          if (!count) return;
+          const step = event.key === "ArrowDown" ? 1 : -1;
+          picker.highlight((picker.active + step + count) % count);
+        } else if (event.key === "Enter" && picker.isOpen() && picker.active >= 0) {
+          event.preventDefault();
+          picker.choose(picker.options[picker.active]);
+        } else if (event.key === "Escape" && picker.isOpen()) {
+          event.preventDefault();
+          picker.close();
+        } else if (event.key === "Enter") {
+          picker.close();
+        }
+      });
+      ui.pathToggle.addEventListener("mousedown", (event) => event.preventDefault());
+      ui.pathToggle.addEventListener("click", () => {
+        if (picker.isOpen()) return picker.close();
+        ui.path.focus();
+        picker.open(false);
+      });
+    },
+  };
 
   async function init() {
     Toolkit.applyTheme();
@@ -2153,7 +2292,8 @@
     ui = {
       form: $("pathForm"),
       path: $("pathInput"),
-      recent: $("recentPaths"),
+      pathMenu: $("pathMenu"),
+      pathToggle: $("pathToggle"),
       range: $("rangeSelect"),
       refresh: $("refreshButton"),
       statusText: $("statusText"),
@@ -2180,7 +2320,7 @@
     if (saved) Object.assign(state.trends, saved);
     state.calendar.metric = store.get("calendarMetric", "changes");
     state.includeMerges = store.get("includeMerges", true) !== false;
-    ui.recent.replaceChildren(...store.get("recent", []).map((p) => el("option", { value: p })));
+    picker.wire();
 
     ui.form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -2254,6 +2394,7 @@
     // "2026/11/12 10:34:22 -0800 PST": dates in changelist forms are in this zone.
     const zone = field(row, "serverDate").match(/\s([+-])(\d{2})(\d{2})\b/);
     if (zone) state.serverOffset = (zone[1] === "-" ? -1 : 1) * (Number(zone[2]) * 60 + Number(zone[3]));
+    picker.loadDepots();
 
     ui.statusText.textContent = "Finding your workspace…";
     const start = await normalizeInput((await defaultPath().catch(() => "")) || store.get("recent", [])[0] || "");
@@ -2263,6 +2404,7 @@
       return;
     }
     ui.path.value = start;
+    remember(start);
     openScope(start);
   }
 
