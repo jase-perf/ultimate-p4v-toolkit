@@ -61,6 +61,7 @@
     root: "",
     scope: "",
     server: "",
+    custom: { from: "", to: "" }, // "YYYY-MM-DD" days, when range is "custom"
     range: "90",
     view: "trends",
     records: new Map(), // change number -> summary
@@ -342,10 +343,34 @@
     }
   }
 
+  const DAY_TEXT = /^\d{4}-\d{2}-\d{2}$/;
+  /** "2026-03-01" -> that local midnight as a Date. */
+  const dayDate = (text) => {
+    const [y, m, d] = text.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  };
+  /** A Date -> "2026-03-01" in local time. */
+  const dayText = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const isCustom = () => state.range === "custom" && DAY_TEXT.test(state.custom.from) && DAY_TEXT.test(state.custom.to);
+
   function rangeStart() {
-    if (state.range === "all") return -Infinity;
+    if (isCustom()) return dayDate(state.custom.from).getTime() / 1000;
+    if (state.range === "all" || state.range === "custom") return -Infinity;
     const today = d3.timeDay.floor(new Date());
     return d3.timeDay.offset(today, -(Number(state.range) - 1)).getTime() / 1000;
+  }
+
+  /** The end of the range: now, or the end of the last chosen day. */
+  function rangeEnd() {
+    const now = Date.now() / 1000;
+    if (!isCustom()) return now;
+    return Math.min(now, d3.timeDay.offset(dayDate(state.custom.to), 1).getTime() / 1000 - 1);
+  }
+
+  /** How the range reads in a sentence: "last 90 days", "1 Mar 2026 to 31 Mar 2026". */
+  function rangeLabel() {
+    if (isCustom()) return `${fmtShort(dayDate(state.custom.from))} to ${fmtShort(dayDate(state.custom.to))}`;
+    return ui.range.options[ui.range.selectedIndex].text.toLowerCase();
   }
 
   /** Make sure everything from the start of the range up to now is loaded. */
@@ -452,8 +477,8 @@
   // ---------------------------------------------------------------------------
 
   function windowBounds() {
-    const start = state.range === "all" ? d3.min(state.records.values(), (r) => r.t) || Date.now() / 1000 : rangeStart();
-    return [start, Date.now() / 1000];
+    const start = rangeStart() === -Infinity ? d3.min(state.records.values(), (r) => r.t) || Date.now() / 1000 : rangeStart();
+    return [start, rangeEnd()];
   }
 
   function selection(start, end, { ignoreUser = false, ignoreFolder = false } = {}) {
@@ -510,7 +535,7 @@
   // ---------------------------------------------------------------------------
 
   const VIEWS = ["trends", "calendar", "freshness", "people"];
-  const RANGES = ["30", "90", "182", "365", "730", "all"];
+  const RANGES = ["30", "90", "182", "365", "730", "all", "custom"];
 
   /** The path being looked at, including a folder filter: "//depot" + "main" -> "//depot/main". */
   function shownPath() {
@@ -528,6 +553,8 @@
         user: state.filter.user,
         view: state.view,
         range: state.range,
+        from: state.range === "custom" ? state.custom.from : null,
+        to: state.range === "custom" ? state.custom.to : null,
         people: state.view === "people" ? state.people.mode : null,
       },
       push
@@ -543,8 +570,46 @@
       filter: { user: params.get("user") || null, folder: params.has("folder") ? params.get("folder") : null },
       view: VIEWS.includes(view) ? view : null,
       range: RANGES.includes(range) ? range : null,
+      custom: { from: DAY_TEXT.test(params.get("from")) ? params.get("from") : "", to: DAY_TEXT.test(params.get("to")) ? params.get("to") : "" },
       people: params.get("people") === "where" ? "where" : params.get("people") === "activity" ? "activity" : null,
     };
+  }
+
+  /** Set the range and show it in the drop-down and date boxes (no history, no loading). */
+  function showRange(range, custom) {
+    state.range = ui.range.value = range;
+    if (ui.range.value !== range) state.range = ui.range.value = "90";
+    if (custom && DAY_TEXT.test(custom.from) && DAY_TEXT.test(custom.to)) state.custom = { from: custom.from, to: custom.to };
+    if (state.range === "custom" && !isCustom()) {
+      // First time: start from the last 90 days.
+      const today = d3.timeDay.floor(new Date());
+      state.custom = { from: dayText(d3.timeDay.offset(today, -89)), to: dayText(today) };
+    }
+    const on = state.range === "custom";
+    ui.dates.hidden = !on;
+    if (on) {
+      const today = dayText(new Date());
+      ui.dateFrom.value = state.custom.from;
+      ui.dateTo.value = state.custom.to;
+      ui.dateFrom.max = state.custom.to;
+      ui.dateTo.min = state.custom.from;
+      ui.dateTo.max = today;
+    }
+  }
+
+  /** The range changed (drop-down or dates): record it, then redraw and load what's missing. */
+  function rangeChanged(range, custom) {
+    syncUrl(false);
+    showRange(range, custom);
+    syncUrl(true);
+    store.set("range", state.range);
+    store.set("custom", state.custom);
+    state.trends.zoom = null;
+    state.trends.animate = true;
+    state.calendar.selected = null;
+    state.budget = state.processed + BUDGET_STEP;
+    render();
+    ensureLoaded();
   }
 
   /** Back or Forward: put everything back the way the URL says. */
@@ -552,8 +617,9 @@
     const wanted = fromUrl();
     if (wanted.view) state.view = wanted.view;
     if (wanted.people) state.people.mode = wanted.people;
-    const rangeChanged = wanted.range && wanted.range !== state.range;
-    if (wanted.range) state.range = ui.range.value = wanted.range;
+    const rangeChanged =
+      wanted.range && (wanted.range !== state.range || (wanted.range === "custom" && (wanted.custom.from !== state.custom.from || wanted.custom.to !== state.custom.to)));
+    if (wanted.range) showRange(wanted.range, wanted.custom);
     state.trends.zoom = null;
     state.trends.hidden = new Set();
     state.calendar.selected = null;
@@ -756,9 +822,8 @@
       const [start, end] = windowBounds();
       if (!selection(start, end, { ignoreUser: true, ignoreFolder: true }).length) {
         const newest = d3.max(state.records.values(), (r) => r.t);
-        const label = ui.range.options[ui.range.selectedIndex].text.toLowerCase();
         const view = emptyView(
-          `Nothing submitted in the ${label}`,
+          isCustom() ? `Nothing submitted from ${rangeLabel()}` : `Nothing submitted in the ${rangeLabel()}`,
           `The most recent changelist under ${state.root === "//" ? "any depot" : state.root} was on ${fmtDay(dateOf(newest))} (${ago(newest)}).`
         );
         const button = el("button", { type: "button", className: "tk-btn tk-btn-primary" }, "Show all time");
@@ -2250,6 +2315,9 @@
       form: $("pathForm"),
       path: $("pathInput"),
       range: $("rangeSelect"),
+      dates: $("customDates"),
+      dateFrom: $("dateFrom"),
+      dateTo: $("dateTo"),
       refresh: $("refreshButton"),
       statusText: $("statusText"),
       statusActions: $("statusActions"),
@@ -2267,9 +2335,7 @@
       return;
     }
 
-    state.range = String(store.get("range", "90"));
-    ui.range.value = state.range;
-    if (ui.range.value !== state.range) state.range = ui.range.value = "90";
+    showRange(String(store.get("range", "90")), store.get("custom", null));
     state.view = store.get("view", "trends");
     const saved = store.get("trends", null);
     if (saved) Object.assign(state.trends, saved);
@@ -2299,17 +2365,19 @@
       ui.path.value = shownPath();
     });
     ui.range.addEventListener("change", () => {
-      syncUrl(false);
-      state.range = ui.range.value;
-      syncUrl(true);
-      store.set("range", state.range);
-      state.trends.zoom = null;
-      state.trends.animate = true;
-      state.calendar.selected = null;
-      state.budget = state.processed + BUDGET_STEP;
-      render();
-      ensureLoaded();
+      if (ui.range.value !== "custom") return rangeChanged(ui.range.value);
+      // Custom starts from whatever was showing, so it's easy to adjust.
+      const [start] = state.scope && state.records.size ? windowBounds() : [d3.timeDay.offset(new Date(), -89).getTime() / 1000];
+      rangeChanged("custom", { from: dayText(dateOf(start)), to: dayText(new Date()) });
     });
+    const datesChanged = () => {
+      let [from, to] = [ui.dateFrom.value, ui.dateTo.value];
+      if (!DAY_TEXT.test(from) || !DAY_TEXT.test(to)) return; // half-typed
+      if (from > to) [from, to] = [to, from];
+      rangeChanged("custom", { from, to });
+    };
+    ui.dateFrom.addEventListener("change", datesChanged);
+    ui.dateTo.addEventListener("change", datesChanged);
     ui.refresh.addEventListener("click", () => {
       fresh.refresh();
       state.trends.animate = true;
@@ -2370,7 +2438,7 @@
     const wanted = fromUrl();
     if (wanted.view) state.view = wanted.view;
     if (wanted.people) state.people.mode = wanted.people;
-    if (wanted.range) state.range = ui.range.value = wanted.range;
+    if (wanted.range) showRange(wanted.range, wanted.custom);
     if (wanted.path) {
       ui.path.value = wanted.path;
       openScope(wanted.path, wanted.filter);

@@ -43,7 +43,13 @@
             <option value="365">Last year</option>
             <option value="730">Last 2 years</option>
             <option value="all">All time</option>
+            <option value="custom">Custom dates…</option>
           </select>
+          <span class="ac-dates" id="customDates" hidden>
+            <input type="date" id="dateFrom" class="ac-select" aria-label="From date" />
+            <span class="tk-muted">to</span>
+            <input type="date" id="dateTo" class="ac-select" aria-label="To date" />
+          </span>
           <button type="submit" class="tk-btn tk-btn-primary">Show</button>
           <button type="button" class="tk-btn ac-icon-btn" id="refreshButton" title="Check for new changelists" aria-label="Check for new changelists">
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M13.6 2.4A7.2 7.2 0 0 0 1 7h1.6a5.6 5.6 0 0 1 9.9-3.5L10 6h5V1l-1.4 1.4ZM13.4 9a5.6 5.6 0 0 1-9.9 3.5L6 10H1v5l1.4-1.4A7.2 7.2 0 0 0 15 9h-1.6Z"/></svg>

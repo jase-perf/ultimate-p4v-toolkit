@@ -1243,3 +1243,19 @@ body.dark-theme .ac-tooltip {
   align-content: flex-start;
   gap: 0 2rem;
 }
+
+.ac-dates {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.ac-dates[hidden] {
+  display: none;
+}
+
+.ac-dates input[type="date"] {
+  padding: 0.3rem 0.4rem;
+  color-scheme: light dark;
+}
