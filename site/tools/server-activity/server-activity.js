@@ -427,13 +427,13 @@
     return block[2];
   }
 
-  async function openScope(root) {
+  async function openScope(root, filter = { user: null, folder: null }) {
     state.token += 1;
     state.root = root;
     state.scope = `${state.server}|${root}`;
     state.records = new Map();
     state.meta = { scope: state.scope, ranges: [], beginning: false };
-    state.filter = { user: null, folder: null };
+    state.filter = { ...filter };
     state.trends.zoom = null;
     state.trends.hidden = new Set();
     state.calendar.selected = null;
@@ -516,6 +516,78 @@
     }, 600);
   }
 
+  // ---------------------------------------------------------------------------
+  // Where you are, kept in the URL so P4V's Back and Forward work
+  // ---------------------------------------------------------------------------
+
+  const VIEWS = ["trends", "calendar", "freshness", "people"];
+  const RANGES = ["30", "90", "182", "365", "730", "all"];
+
+  /** The path being looked at, including a folder filter: "//depot" + "main" -> "//depot/main". */
+  function shownPath() {
+    if (state.filter.folder === null || state.filter.folder === "") return state.root;
+    return childPath(state.filter.folder);
+  }
+
+  function urlFor() {
+    const params = new URLSearchParams(location.search); // keep anything P4V put there
+    const set = (key, value) => (value === null || value === undefined || value === "" ? params.delete(key) : params.set(key, value));
+    set("path", state.root);
+    set("folder", state.filter.folder);
+    set("user", state.filter.user);
+    set("view", state.view);
+    set("range", state.range);
+    set("people", state.view === "people" ? state.people.mode : null);
+    const query = params.toString();
+    return `${location.pathname}${query ? `?${query}` : ""}${location.hash}`;
+  }
+
+  /** Record the current view in the URL: a new history entry, or (push = false) an update of this one. */
+  function syncUrl(push) {
+    if (!state.scope) return;
+    const url = urlFor();
+    if (url === `${location.pathname}${location.search}${location.hash}`) return;
+    try {
+      if (push) history.pushState(null, "", url);
+      else history.replaceState(null, "", url);
+    } catch (err) {
+      // some hosts refuse history changes; navigation still works without it
+    }
+  }
+
+  function fromUrl() {
+    const params = new URLSearchParams(location.search);
+    const view = params.get("view");
+    const range = params.get("range");
+    return {
+      path: params.get("path") || "",
+      filter: { user: params.get("user") || null, folder: params.has("folder") ? params.get("folder") : null },
+      view: VIEWS.includes(view) ? view : null,
+      range: RANGES.includes(range) ? range : null,
+      people: params.get("people") === "where" ? "where" : params.get("people") === "activity" ? "activity" : null,
+    };
+  }
+
+  /** Back or Forward: put everything back the way the URL says. */
+  function applyUrl() {
+    const wanted = fromUrl();
+    if (wanted.view) state.view = wanted.view;
+    if (wanted.people) state.people.mode = wanted.people;
+    const rangeChanged = wanted.range && wanted.range !== state.range;
+    if (wanted.range) state.range = ui.range.value = wanted.range;
+    state.trends.zoom = null;
+    state.trends.hidden = new Set();
+    state.calendar.selected = null;
+    state.trends.animate = true;
+    if (wanted.path && wanted.path !== state.root) {
+      openScope(wanted.path, wanted.filter);
+      return;
+    }
+    state.filter = wanted.filter;
+    render();
+    if (rangeChanged) ensureLoaded();
+  }
+
   function render() {
     assignColors();
     renderStatus();
@@ -526,6 +598,8 @@
     }
     hideTip();
     if (!state.scope) return;
+    if (document.activeElement !== ui.path) ui.path.value = shownPath();
+    syncUrl(false);
     if (state.view === "trends") renderTrends();
     else if (state.view === "calendar") renderCalendar();
     else if (state.view === "freshness") fresh.render();
@@ -634,10 +708,13 @@
     ui.filters.classList.toggle("is-filtered", Boolean(state.filter.user || state.filter.folder !== null));
   }
 
-  function setFilter(change) {
+  function setFilter(change, view) {
+    syncUrl(false);
     Object.assign(state.filter, change);
+    if (view) state.view = view;
     state.trends.hidden = new Set();
     state.trends.animate = true;
+    syncUrl(true);
     render();
   }
 
@@ -2053,8 +2130,10 @@
       "div",
       { className: "ac-people-bar" },
       segment([["activity", "Activity"], ["where", "Who works where"]], mode, (v) => {
+        syncUrl(false);
         state.people.mode = v;
         store.set("peopleMode", v);
+        syncUrl(true);
         renderPeople();
       })
     );
@@ -2105,12 +2184,7 @@
                 "td",
                 {
                   style: `background:${bg};color:${strength > 0.55 ? "#fff" : "inherit"}`,
-                  onclick: () => {
-                    state.filter = { user: p.user, folder: topLevel(f) };
-                    state.view = "trends";
-                    state.trends.animate = true;
-                    render();
-                  },
+                  onclick: () => setFilter({ user: p.user, folder: topLevel(f) }, "trends"),
                 },
                 v ? (v >= 1000 ? d3.format(".2~s")(v) : String(v)) : ""
               );
@@ -2362,12 +2436,23 @@
         showNotice("warning", "Choose a path", ["Enter a depot path such as //depot, or a folder in your workspace."]);
         return;
       }
-      ui.path.value = root;
       remember(root);
-      openScope(root);
+      // A folder just below what's loaded is a filter on the same history, not a new read.
+      if (state.scope && root.toLowerCase() === state.root.toLowerCase()) {
+        setFilter({ folder: null });
+      } else if (state.scope && String(parentOf(root)).toLowerCase() === state.root.toLowerCase()) {
+        setFilter({ folder: root.slice(state.root === "//" ? 2 : state.root.length + 1) });
+      } else {
+        syncUrl(false);
+        openScope(root);
+        syncUrl(true);
+      }
+      ui.path.value = shownPath();
     });
     ui.range.addEventListener("change", () => {
+      syncUrl(false);
       state.range = ui.range.value;
+      syncUrl(true);
       store.set("range", state.range);
       state.trends.zoom = null;
       state.trends.animate = true;
@@ -2384,9 +2469,11 @@
     });
     ui.tabs.addEventListener("click", (event) => {
       const button = event.target.closest("button[data-view]");
-      if (!button) return;
+      if (!button || button.dataset.view === state.view) return;
+      syncUrl(false);
       state.view = button.dataset.view;
       store.set("view", state.view);
+      syncUrl(true);
       state.trends.animate = true;
       render();
     });
@@ -2428,6 +2515,19 @@
     const zone = field(row, "serverDate").match(/\s([+-])(\d{2})(\d{2})\b/);
     if (zone) state.serverOffset = (zone[1] === "-" ? -1 : 1) * (Number(zone[2]) * 60 + Number(zone[3]));
     picker.loadDepots();
+
+    window.addEventListener("popstate", applyUrl);
+
+    // A URL with a path (a reload, or Back into this page) wins over the selection and workspace.
+    const wanted = fromUrl();
+    if (wanted.view) state.view = wanted.view;
+    if (wanted.people) state.people.mode = wanted.people;
+    if (wanted.range) state.range = ui.range.value = wanted.range;
+    if (wanted.path) {
+      ui.path.value = wanted.path;
+      openScope(wanted.path, wanted.filter);
+      return;
+    }
 
     ui.statusText.textContent = "Finding your workspace…";
     const start = await normalizeInput((await defaultPath().catch(() => "")) || store.get("recent", [])[0] || "");
