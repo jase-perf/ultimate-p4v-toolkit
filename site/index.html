@@ -490,6 +490,30 @@
         gap: 10px;
         margin-top: 4px;
       }
+      .dl-group {
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 4px 0 8px;
+      }
+      .downloads + .dl-group {
+        margin-top: 18px;
+      }
+      .import-list {
+        margin: 0 0 10px;
+        padding-left: 18px;
+        font-size: 13px;
+        line-height: 1.65;
+        color: var(--muted);
+      }
+      .import-list li {
+        margin-bottom: 8px;
+      }
+      .import-list strong {
+        color: var(--ink);
+        white-space: nowrap;
+      }
       .dl {
         display: flex;
         align-items: center;
@@ -629,7 +653,7 @@
         display: block;
         max-height: 4.6em;
         overflow: auto;
-        word-break: break-all;
+        white-space: nowrap;
         white-space: pre-wrap;
         padding: 3px 7px;
       }
@@ -816,26 +840,37 @@
             <div class="card-body">
               <div class="step-num">Step 1</div>
               <h3>Download the tools</h3>
+              <div class="dl-group">For P4V</div>
               <div class="downloads">
-                <a class="dl primary" href="xml/tabs.xml" download>
+                <a class="dl primary" href="xml/p4v-tabs.xml" download>
                   <span class="dl-arrow">↓</span>
                   <span class="dl-text">
-                    <span class="dl-name glitch">tabs.xml</span>
+                    <span class="dl-name glitch">p4v-tabs.xml</span>
                     <span class="dl-what">The five tabs. Start here.</span>
                   </span>
                 </a>
-                <a class="dl" href="xml/windows.xml" download>
+                <a class="dl" href="xml/p4v-right-click-tools.xml" download>
                   <span class="dl-arrow">↓</span>
                   <span class="dl-text">
-                    <span class="dl-name glitch">windows.xml</span>
-                    <span class="dl-what">Right-click tools for P4V</span>
+                    <span class="dl-name glitch">p4v-right-click-tools.xml</span>
+                    <span class="dl-what">Revert Exclusive Checkouts. Admins only.</span>
                   </span>
                 </a>
-                <a class="dl" href="xml/p4admin-windows.xml" download>
+              </div>
+              <div class="dl-group">For P4Admin (super users)</div>
+              <div class="downloads">
+                <a class="dl" href="xml/p4admin-custom-tools-pc.xml" download>
                   <span class="dl-arrow">↓</span>
                   <span class="dl-text">
-                    <span class="dl-name glitch">p4admin-windows.xml</span>
-                    <span class="dl-what">Right-click tools for P4Admin</span>
+                    <span class="dl-name glitch">p4admin-custom-tools-pc.xml</span>
+                    <span class="dl-what">Reset User Password, on a Windows PC</span>
+                  </span>
+                </a>
+                <a class="dl" href="xml/p4admin-custom-tools-mac.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4admin-custom-tools-mac.xml</span>
+                    <span class="dl-what">Reset User Password, on a Mac</span>
                   </span>
                 </a>
               </div>
@@ -848,20 +883,33 @@
               <div class="step-num">Step 2</div>
               <h3>Import them</h3>
               <p>
-                Go to <span class="menu-path">Tools &gt; Manage Tools</span>,
-                pick <span class="menu-path">HTML Tabs…</span> (or
-                <span class="menu-path">HTML Windows…</span> for the window
-                files), click <em>Import</em>, and choose the file.
+                Each file goes in its own place, under
+                <span class="menu-path">Tools &gt; Manage Tools</span>. Pick
+                the item below, click <em>Import</em>, and choose the file.
               </p>
+              <ul class="import-list">
+                <li>
+                  <strong>p4v-tabs.xml</strong>: in P4V,
+                  <span class="menu-path">HTML Tabs</span>. Open the tabs from
+                  the <span class="menu-path">View</span> menu.
+                </li>
+                <li>
+                  <strong>p4v-right-click-tools.xml</strong>: in P4V,
+                  <span class="menu-path">HTML Windows</span> (P4V's name for
+                  tools that open in their own window). Right-click files or
+                  folders to use it.
+                </li>
+                <li>
+                  <strong>p4admin-custom-tools-pc.xml</strong> or
+                  <strong>p4admin-custom-tools-mac.xml</strong>: in P4Admin,
+                  <span class="menu-path">Custom Tools</span>. Right-click a
+                  user to use it.
+                </li>
+              </ul>
               <p>
-                P4V then lists every tool in the file. Untick any you don't
-                want. Tools marked <em>(Admin)</em> only work for admins and
-                super users, so everyone else can leave them out.
-              </p>
-              <p>
-                Open the new tabs from the <span class="menu-path">View</span>
-                menu. Right-click tools appear when you right-click files and
-                folders.
+                Before importing, P4V lists every tool in the file. Untick any
+                you don't want. Tools marked <em>(Admin)</em> only work for
+                admins and super users, so everyone else can leave them out.
               </p>
               <p>
                 If a tool won't load, check the permitted base URLs in
@@ -874,9 +922,9 @@
         </div>
 
         <p class="admin-note">
-          <strong>Running a team?</strong> A server admin can give everyone the
-          tabs and windows at once, with no importing, by pointing P4V at the
-          same files. See <a href="#manual">Manual install</a> below for the
+          <strong>Running a team?</strong> A server admin can give everyone in
+          P4V the tabs and right-click tools at once, with no importing, by
+          pointing P4V at the same files. See <a href="#manual">Manual install</a> below for the
           commands.
         </p>
       </section>
@@ -920,11 +968,11 @@
             <div id="manualTools"></div>
 
             <div class="manual-tool">
-              <h3>Roll out to your whole team <span class="tag">Server admins</span></h3>
+              <h3>Roll out to your whole P4V team <span class="tag">Server admins</span></h3>
               <dl class="fields" id="teamFields"></dl>
               <p class="section-lead" style="margin: 10px 0 0; font-size: 12px">
-                P4V picks these up the next time people connect. P4Admin doesn't
-                read these properties, so P4Admin users still import the files.
+                P4V picks these up the next time people connect. They only cover
+                P4V, so Reset User Password is still imported in P4Admin.
                 If your server uses <code>P4VJS.HTMLAllowList</code>, add
                 <code>https://jase.town</code> to it.
               </p>
@@ -962,12 +1010,8 @@
             shots: [["screenshots/project-activity.webp", "Map"]],
             desc:
               "A live map of every checked-out file in your project, coloured by who has it. Exclusive checkouts show a lock, and files that several people have open stand out, so you can see clashes before they happen.",
-            find:
-              "View > Project Activity. Or right-click folders > Project Activity (selected folders).",
-            manual: [
-              { type: "HTML Tab", path: "tools/project-activity/index.html" },
-              { type: "HTML Window", path: "tools/project-activity/index.html", arg: "%D", size: "1280 × 820" },
-            ],
+            find: "View > Project Activity",
+            manual: [{ type: "HTML Tab", path: "tools/project-activity/index.html" }],
           },
           {
             name: "Server Activity",
@@ -992,12 +1036,8 @@
             shots: [["screenshots/depot-size-map.webp", "Map"]],
             desc:
               "Find out where the space goes. Zoom through folders sized by how big they are, compare what a sync downloads with everything stored on the server, include shelved files, and find the biggest files. Opens quickly even on huge depots.",
-            find:
-              "View > Depot Size Map. Or right-click a folder > Depot Size Map (selected folder).",
-            manual: [
-              { type: "HTML Tab", path: "tools/depot-size-map/index.html" },
-              { type: "HTML Window", path: "tools/depot-size-map/index.html", arg: "%D", size: "1280 × 820" },
-            ],
+            find: "View > Depot Size Map",
+            manual: [{ type: "HTML Tab", path: "tools/depot-size-map/index.html" }],
           },
           {
             name: "Revert Exclusive Checkouts",
@@ -1007,12 +1047,17 @@
             shots: [["screenshots/revert-exclusive-checkouts.webp", "Window"]],
             desc:
               "Someone left a file exclusively checked out and isn't around to release it? Right-click the folder, see every exclusive checkout inside it with who has it and since when, and release the ones you pick.",
-            find: "Right-click files or folders > Revert Exclusive Checkouts (Admin)",
+            find: "In P4V, right-click files or folders > Revert Exclusive Checkouts (Admin)",
+            install: {
+              before: "Want it in P4Admin too? Import ",
+              links: [["xml/p4admin-right-click-tools.xml", "p4admin-right-click-tools.xml"]],
+              after: " in P4Admin under Manage Tools > HTML Windows.",
+            },
             manual: [
               {
                 type: "HTML Window",
                 path: "tools/revert-exclusive-checkouts/index.html",
-                arg: "%D in P4V, %F in P4Admin",
+                arg: "%D in P4V, or %F in P4Admin",
                 size: "960 × 760",
                 note: "Add to applicable context menus, and refresh P4V when the window closes",
               },
@@ -1047,12 +1092,16 @@
             placeholder: ["RESET USER PASSWORD", "Right-click a user in P4Admin"],
             desc:
               "Give someone a temporary password and make them choose a new one when they next log in. The message to send them is copied for you. Needs the p4 command-line client.",
-            find: "Right-click a user > Reset User Password (Super User)",
+            find: "In P4Admin, right-click a user > Reset User Password (Super User)",
             customTool: "reset-password",
-            downloads: [
-              ["xml/custom-tools-windows.xml", "Windows"],
-              ["xml/custom-tools-macos.xml", "macOS"],
-            ],
+            install: {
+              before: "Import ",
+              links: [
+                ["xml/p4admin-custom-tools-pc.xml", "the Windows PC file"],
+                ["xml/p4admin-custom-tools-mac.xml", "the Mac file"],
+              ],
+              after: " in P4Admin under Manage Tools > Custom Tools.",
+            },
           },
         ];
 
@@ -1162,25 +1211,25 @@
                   "div",
                   { className: "card-meta" },
                   el("span", {}, el("span", { className: "dot", style: `background:${whoColor}` }), tool.who),
-                  el("span", {}, tool.kind === "Tab" ? "P4V tab" : "Right-click tool")
+                  el("span", {}, tool.kind === "Tab" ? "P4V tab" : tool.customTool ? "P4Admin right-click tool" : "P4V right-click tool")
                 ),
                 el(
                   "p",
                   { className: "find" },
                   el("strong", {}, "find it"),
                   tool.find,
-                  tool.downloads &&
+                  tool.install &&
                     el(
                       "span",
                       {},
                       el("br"),
                       el("strong", {}, "install"),
-                      "Import ",
-                      tool.downloads.flatMap(([href, label], i) => [
+                      tool.install.before,
+                      tool.install.links.flatMap(([href, label], i) => [
                         i ? " or " : "",
-                        el("a", { href, download: true }, `the ${label} file`),
+                        el("a", { href, download: true }, label),
                       ]),
-                      " under Manage Tools > Custom Tools."
+                      tool.install.after
                     )
                 )
               )
@@ -1212,18 +1261,18 @@
               .then((r) => r.json())
               .then((def) => {
                 fields.append(
-                  ...field("Add it as", "Custom Tool (Tools > Manage Tools > Custom Tools > New > Tool…)").flat(),
+                  ...field("Add it as", "Custom Tool, in P4Admin (Tools > Manage Tools > Custom Tools > New > Tool…)").flat(),
                   ...field("Options", def.options.join(", ")).flat(),
                   ...field(
                     "Note",
                     "Paste the Arguments exactly as shown, without adding quotes. They contain the script encoded as base64."
                   ).flat(),
-                  el("div", { className: "os-label" }, "Windows"),
+                  el("div", { className: "os-label" }, "Windows PC"),
                   ...field("Application", def.windows.application, true).flat(),
                   ...field("Arguments", def.windows.arguments, true).flat(),
                   el("dt", {}, "Source"),
                   el("dd", { className: "plain" }, el("a", { href: `${REPO}/blob/main/${def.windows.source}` }, def.windows.source)),
-                  el("div", { className: "os-label" }, "macOS"),
+                  el("div", { className: "os-label" }, "Mac"),
                   ...field("Application", def.macos.application, true).flat(),
                   ...field("Arguments", def.macos.arguments, true).flat(),
                   el("dt", {}, "Source"),
@@ -1238,8 +1287,8 @@
 
         const team = document.getElementById("teamFields");
         team.append(
-          ...field("Tabs", `p4 property -a -n P4VJS.HTMLTabs -v ${new URL("xml/tabs.xml", BASE).href}`, true).flat(),
-          ...field("Windows", `p4 property -a -n P4VJS.HTMLWindows -v ${new URL("xml/windows.xml", BASE).href}`, true).flat()
+          ...field("Tabs", `p4 property -a -n P4VJS.HTMLTabs -v ${new URL("xml/p4v-tabs.xml", BASE).href}`, true).flat(),
+          ...field("Right-click tools", `p4 property -a -n P4VJS.HTMLWindows -v ${new URL("xml/p4v-right-click-tools.xml", BASE).href}`, true).flat()
         );
 
         // Open the manual section when linked to directly.

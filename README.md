@@ -10,13 +10,13 @@ Work in progress.
 
 | Tool | Type | Argument | Who can use it |
 |---|---|---|---|
-| [Project Activity](site/tools/project-activity/) | HTML Tab (or HTML Window) | none (`%D` as a window) | Everyone |
-| [Depot Size Map](site/tools/depot-size-map/) | HTML Tab (or HTML Window) | none (`%D` as a window) | Everyone |
-| [Server Activity](site/tools/server-activity/) | HTML Tab | none | Everyone |
-| [Reset User Password](cli-tools/reset-password/) | Custom Tool (Windows / macOS, needs `p4` on PATH) | `%u` (user) | Super users |
-| [Revert Exclusive Checkouts](site/tools/revert-exclusive-checkouts/) | HTML Window | `%D`, `%F`, or `%r` (files or folders) | Admins and super users |
-| [Typemap Editor](site/tools/typemap/) | HTML Tab | none | Admins and super users |
-| [AI Help](site/tools/ai-help/) | HTML Tab | none | Everyone |
+| [Project Activity](site/tools/project-activity/) | P4V HTML Tab | none | Everyone |
+| [Depot Size Map](site/tools/depot-size-map/) | P4V HTML Tab | none | Everyone |
+| [Server Activity](site/tools/server-activity/) | P4V HTML Tab | none | Everyone |
+| [Reset User Password](cli-tools/reset-password/) | P4Admin Custom Tool (Windows PC or Mac, needs `p4` on PATH) | `%u` (user) | Super users |
+| [Revert Exclusive Checkouts](site/tools/revert-exclusive-checkouts/) | P4V HTML Window (P4Admin optional) | `%D`, `%F`, or `%r` (files or folders) | Admins and super users |
+| [Typemap Editor](site/tools/typemap/) | P4V HTML Tab | none | Admins and super users |
+| [AI Help](site/tools/ai-help/) | P4V HTML Tab | none | Everyone |
 
 ## Where your data goes
 
@@ -28,20 +28,24 @@ Tools that need elevated access check the current user's access level when they 
 
 Download the definition files and import them. Modern P4V has HTML Tools on by default. If *Preferences > HTML Tools* limits the permitted base URLs, add `https://jase.town`.
 
+The file names never use "windows" for P4V's HTML Windows, so "Windows" below always means the operating system.
+
 | File | What's in it | Import it in |
 |---|---|---|
-| [`tabs.xml`](https://jase.town/ultimate-p4v-toolkit/xml/tabs.xml) | Project Activity, Server Activity, Depot Size Map, Typemap Editor and AI Help, with tab icons | *Tools > Manage Tools > HTML Tabs > Import HTML Tabs…* |
-| [`windows.xml`](https://jase.town/ultimate-p4v-toolkit/xml/windows.xml) | Revert Exclusive Checkouts, plus Project Activity and Depot Size Map for the folders you right-click (P4V) | *Tools > Manage Tools > HTML Windows > Import* |
-| [`p4admin-windows.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-windows.xml) | Revert Exclusive Checkouts for P4Admin | P4Admin: *Tools > Manage Tools > HTML Windows > Import* |
-| [`custom-tools-windows.xml`](https://jase.town/ultimate-p4v-toolkit/xml/custom-tools-windows.xml) / [`custom-tools-macos.xml`](https://jase.town/ultimate-p4v-toolkit/xml/custom-tools-macos.xml) | Reset User Password | *Tools > Manage Tools > Custom Tools > Import Custom Tools…* |
+| [`p4v-tabs.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4v-tabs.xml) | Project Activity, Server Activity, Depot Size Map, Typemap Editor and AI Help, with tab icons | P4V: *Tools > Manage Tools > HTML Tabs > Import* |
+| [`p4v-right-click-tools.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4v-right-click-tools.xml) | Revert Exclusive Checkouts | P4V: *Tools > Manage Tools > HTML Windows > Import* |
+| [`p4admin-custom-tools-pc.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-custom-tools-pc.xml) / [`p4admin-custom-tools-mac.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-custom-tools-mac.xml) | Reset User Password, for a Windows PC or a Mac | P4Admin: *Tools > Manage Tools > Custom Tools > Import* |
+| [`p4admin-right-click-tools.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-right-click-tools.xml) | Revert Exclusive Checkouts for P4Admin (optional) | P4Admin: *Tools > Manage Tools > HTML Windows > Import* |
+
+Each tool is offered one way, as a tab or a right-click tool, so it isn't listed twice in P4V's menus.
 
 When you import a file, P4V lists the tools in it so you can untick the ones you don't want. Tools that need elevated access say so in their name, like *Typemap Editor (Admin)*, so other users can leave them out.
 
-The files point at the live site, so tools update by themselves when this repo changes. To give your whole team the tabs and windows, a server admin can point P4V at the same URLs instead:
+The files point at the live site, so tools update by themselves when this repo changes. To give everyone in P4V the tabs and right-click tools, a server admin can point P4V at the same URLs instead:
 
 ```
-p4 property -a -n P4VJS.HTMLTabs -v https://jase.town/ultimate-p4v-toolkit/xml/tabs.xml
-p4 property -a -n P4VJS.HTMLWindows -v https://jase.town/ultimate-p4v-toolkit/xml/windows.xml
+p4 property -a -n P4VJS.HTMLTabs -v https://jase.town/ultimate-p4v-toolkit/xml/p4v-tabs.xml
+p4 property -a -n P4VJS.HTMLWindows -v https://jase.town/ultimate-p4v-toolkit/xml/p4v-right-click-tools.xml
 ```
 
 The files are generated by `scripts/build_install_xml.py`, and the icons by `scripts/make_icons.py`.

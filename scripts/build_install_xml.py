@@ -1,13 +1,18 @@
 """Build the importable P4V / P4Admin tool definition files.
 
 Writes to site/xml/ (served by Pages, so admins can also point P4VJS.HTMLTabs /
-P4VJS.HTMLWindows at the URLs):
+P4VJS.HTMLWindows at the URLs). File names avoid the word "windows" so it only
+ever means the operating system:
 
-  tabs.xml                 HTML Tabs     (Manage Tools > HTML Tabs > Import)
-  windows.xml              HTML Windows for P4V     (%D)
-  p4admin-windows.xml      HTML Windows for P4Admin (%F)
-  custom-tools-windows.xml Custom Tools  (Manage Tools > Custom Tools > Import)
-  custom-tools-macos.xml
+  p4v-tabs.xml                   P4V HTML Tabs (Manage Tools > HTML Tabs > Import)
+  p4v-right-click-tools.xml      P4V HTML Windows (Manage Tools > HTML Windows > Import)
+  p4admin-right-click-tools.xml  The same for P4Admin (offered on the tool's card)
+  p4admin-custom-tools-pc.xml    P4Admin Custom Tools for Windows PCs
+  p4admin-custom-tools-mac.xml   P4Admin Custom Tools for Macs
+                                 (Manage Tools > Custom Tools > Import)
+
+Each tool is offered one way only (a tab or a right-click window, not both),
+so P4V's menus don't list the same tool twice.
 
 Tab icons come from site/icons/<tool>.png (see scripts/make_icons.py).
 Custom Tool commands come from site/custom-tools/<tool>.json
@@ -49,8 +54,6 @@ TABS = [
 # The key seeds the window's Identifier, so renaming a window doesn't change it.
 WINDOWS = [
     ("Revert Exclusive Checkouts", "Revert Exclusive Checkouts (Admin)", "tools/revert-exclusive-checkouts/index.html", "%D", "%F", 960, 760, True),
-    ("Project Activity (selected folders)", "Project Activity (selected folders)", "tools/project-activity/index.html", "%D", None, 1280, 820, False),
-    ("Depot Size Map (selected folder)", "Depot Size Map (selected folder)", "tools/depot-size-map/index.html", "%D", None, 1280, 820, False),
 ]
 
 CUSTOM_TOOLS = ["reset-password"]
@@ -142,11 +145,11 @@ def custom_tools_xml(os_key: str) -> str:
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     files = {
-        "tabs.xml": tabs_xml(),
-        "windows.xml": windows_xml("p4v"),
-        "p4admin-windows.xml": windows_xml("p4admin"),
-        "custom-tools-windows.xml": custom_tools_xml("windows"),
-        "custom-tools-macos.xml": custom_tools_xml("macos"),
+        "p4v-tabs.xml": tabs_xml(),
+        "p4v-right-click-tools.xml": windows_xml("p4v"),
+        "p4admin-right-click-tools.xml": windows_xml("p4admin"),
+        "p4admin-custom-tools-pc.xml": custom_tools_xml("windows"),
+        "p4admin-custom-tools-mac.xml": custom_tools_xml("macos"),
     }
     for name, text in files.items():
         (OUT / name).write_text(text, encoding="utf-8", newline="\n")
