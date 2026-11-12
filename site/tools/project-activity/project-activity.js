@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Project Activity
+ * Active Files
  *
  * A zoomable treemap of every file checked out under a path, coloured by who
  * has it. One `p4 opened -a` call supplies the data; the tree is built here.
@@ -1272,7 +1272,7 @@
 
     if (!Toolkit.inP4V()) {
       showNotice("info", "Open this page from P4V", [
-        "Project Activity reads checkouts through P4V. Add it under Tools > Manage Tools > HTML Tabs, then open the tab.",
+        "Active Files reads checkouts through P4V. Add it under Tools > Manage Tools > HTML Tabs, then open the tab.",
       ]);
       return;
     }

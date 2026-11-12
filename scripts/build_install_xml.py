@@ -40,7 +40,7 @@ ID_NAMESPACE = uuid.UUID("6f1d9a52-3c1e-4b8e-9a7e-2f0f5d4c8b11")
 CONTEXT_MENUS = ["Back", "Forward", "Reload", "Stop", "Inspect"]
 
 TABS = [
-    ("Project Activity", "tools/project-activity/index.html", "project-activity"),
+    ("Active Files", "tools/project-activity/index.html", "project-activity"),
     ("Server Activity", "tools/server-activity/index.html", "server-activity"),
     ("Depot Size Map", "tools/depot-size-map/index.html", "depot-size-map"),
     ("Typemap Editor (Admin)", "tools/typemap/index.html", "typemap"),

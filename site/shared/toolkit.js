@@ -490,7 +490,7 @@ const Toolkit = (() => {
    * replaces it. Choosing an entry submits the form.
    * @param {{ input: HTMLInputElement, form: HTMLFormElement, recent: () => string[], allDepots?: string, suffix?: string }} options
    *   allDepots: the path offered for "all depots" ("//" by default, "" to leave it out);
-   *   suffix: added to a chosen depot (Project Activity wants "/...").
+   *   suffix: added to a chosen depot (Active Files wants "/...").
    */
   function pathPicker({ input, form, recent, allDepots = "//", suffix = "" }) {
     const box = el("div", { className: "tk-pathbox" });
