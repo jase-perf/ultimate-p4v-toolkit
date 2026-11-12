@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--perforce-xml-version=1-->
+<HtmlWindowList varName="htmlwindowlist">
+  <HtmlWindow>
+    <Definition>
+      <Name>Revert Exclusive Checkouts</Name>
+      <Url>https://jase.town/ultimate-p4v-toolkit/tools/revert-exclusive-checkouts/index.html</Url>
+      <Argument>%F</Argument>
+      <Shortcut></Shortcut>
+      <Width>960</Width>
+      <Heigth>760</Heigth>
+      <HTMLContextMenus>
+        <item>Back</item>
+        <item>Forward</item>
+        <item>Reload</item>
+        <item>Stop</item>
+        <item>Inspect</item>
+      </HTMLContextMenus>
+      <Identifier>20336b08-8d72-5277-b755-489233895f20</Identifier>
+    </Definition>
+    <AddToContext>true</AddToContext>
+    <Refresh>true</Refresh>
+  </HtmlWindow>
+</HtmlWindowList>

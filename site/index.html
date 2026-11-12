@@ -48,6 +48,27 @@
         font-weight: 600;
         margin-bottom: 0.35rem;
       }
+      .tool-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .tool-icon {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+        flex: none;
+      }
+      .install-list {
+        list-style: none;
+        margin: 0.5rem 0 0.6rem;
+        padding: 0;
+        display: grid;
+        gap: 0.4rem;
+      }
+      .install-list a {
+        font-weight: 600;
+      }
       .field-row {
         display: grid;
         grid-template-columns: 6.5rem 1fr auto;
@@ -81,11 +102,21 @@
       </header>
 
       <div class="tk-notice">
-        <strong class="tk-notice-title">Adding a tool</strong>
+        <strong class="tk-notice-title">Install them all</strong>
         <p>
           Turn on HTML Tools in <em>Edit &gt; Preferences &gt; HTML Tools</em>.
-          Then go to <em>Tools &gt; Manage Tools</em> and add an HTML Window or
-          HTML Tab with the URL and settings below.
+          Then download these files and import each one from
+          <em>Tools &gt; Manage Tools</em>, under the matching type.
+        </p>
+        <ul class="install-list">
+          <li><a href="xml/tabs.xml" download>tabs.xml</a>: all five HTML Tabs, with icons. Import under <em>HTML Tabs</em>.</li>
+          <li><a href="xml/windows.xml" download>windows.xml</a>: Revert Exclusive Checkouts, plus Project Activity and Depot Size Map for the folders you right-click. Import under <em>HTML Windows</em> in P4V.</li>
+          <li><a href="xml/p4admin-windows.xml" download>p4admin-windows.xml</a>: Revert Exclusive Checkouts for P4Admin.</li>
+          <li><a href="xml/custom-tools-windows.xml" download>custom-tools-windows.xml</a> or <a href="xml/custom-tools-macos.xml" download>custom-tools-macos.xml</a>: Reset User Password. Import under <em>Custom Tools</em>.</li>
+        </ul>
+        <p class="tk-muted">
+          Or add any single tool by hand: add an HTML Tab or HTML Window with the
+          URL and settings shown on its card below.
         </p>
       </div>
 
@@ -117,6 +148,7 @@
           {
             name: "Project Activity",
             path: "tools/project-activity/index.html",
+            icon: "icons/project-activity.png",
             kind: "HTML Tab",
             description:
               "A live, zoomable map of everything checked out under a path, coloured by who has it. Spot exclusive checkouts and files several people are editing at a glance.",
@@ -129,6 +161,7 @@
           {
             name: "Server Activity",
             path: "tools/server-activity/index.html",
+            icon: "icons/server-activity.png",
             kind: "HTML Tab",
             description:
               "Who's working where, and what's been changing: trends over time (by person, folder or action), a calendar of activity per stream, a freshness map of how recently each folder changed, and a people view. History is saved on the computer, so only new changelists are fetched next time.",
@@ -141,6 +174,7 @@
           {
             name: "Depot Size Map",
             path: "tools/depot-size-map/index.html",
+            icon: "icons/depot-size-map.png",
             kind: "HTML Tab",
             description:
               "See where the space goes: a zoomable map of folder sizes, measured as you zoom so even huge depots open quickly. Compare what a sync downloads with everything stored on the server, include shelved files, and find the biggest files.",
@@ -153,6 +187,7 @@
           {
             name: "Revert Exclusive Checkouts",
             path: "tools/revert-exclusive-checkouts/index.html",
+            icon: "icons/revert-exclusive-checkouts.png",
             kind: "HTML Window",
             description:
               "Find files checked out exclusively (+l) under the selected files or folders, and revert the checkouts so others can work on them.",
@@ -165,6 +200,7 @@
           {
             name: "Typemap Editor",
             path: "tools/typemap/index.html",
+            icon: "icons/typemap.png",
             kind: "HTML Tab",
             description:
               "View and edit the server typemap, with templates for common project types.",
@@ -173,6 +209,7 @@
           {
             name: "AI Help",
             path: "tools/ai-help/index.html",
+            icon: "icons/ai-help.png",
             kind: "HTML Tab",
             description:
               "Ask questions and get answers with links to the Perforce documentation and knowledge base.",
@@ -191,7 +228,13 @@
             el(
               "section",
               { className: "tk-card" },
-              el("h2", {}, `${tool.name} `, el("span", { className: "tk-tag" }, tool.kind)),
+              el(
+                "h2",
+                { className: "tool-title" },
+                el("img", { className: "tool-icon", src: tool.icon, alt: "" }),
+                `${tool.name} `,
+                el("span", { className: "tk-tag" }, tool.kind)
+              ),
               el("p", {}, tool.description),
               el(
                 "dl",
