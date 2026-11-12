@@ -182,7 +182,7 @@ const Toolkit = (() => {
         ? value
         : String(value).split(/\r?\n|,(?=\s*(?:\/\/|[A-Za-z]:[\\/]))/);
       for (const item of list) {
-        let path = String(item).trim();
+        let path = fromP4Url(String(item).trim());
         if (!path) continue;
         if (asFolder || /[\\/]$/.test(path)) path = toFolderWildcard(path);
         if (!paths.includes(path)) paths.push(path);
@@ -204,6 +204,54 @@ const Toolkit = (() => {
 
     // A folder can appear both as "//x/dir" and "//x/dir/..."; keep the wildcard form.
     return paths.filter((path) => !paths.includes(`${path}/...`) && !paths.includes(`${path}\\...`));
+  }
+
+  /**
+   * A changelist's time in Unix seconds, or 0 if it can't be read.
+   * The server sends "time" as seconds, but P4V can hand `p4 changes` rows
+   * over in changelist-form shape instead: "Date" as "2026/11/10 14:22:01",
+   * in the server's time zone. Pass the server's UTC offset in minutes (from
+   * `p4 info`'s serverDate) if known; otherwise this computer's is used.
+   */
+  function changeTime(row, serverOffsetMinutes) {
+    for (const name of ["time", "date"]) {
+      const raw = field(row, name).trim();
+      if (!raw) continue;
+      if (/^\d+(\.\d+)?$/.test(raw)) {
+        const n = Number(raw);
+        if (n > 1e11) return Math.round(n / 1000); // milliseconds
+        if (n > 0) return n;
+        continue;
+      }
+      const m = raw.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+      if (m) {
+        const asUtc = Date.UTC(+m[1], m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)) / 1000;
+        const offset = serverOffsetMinutes ?? -new Date(asUtc * 1000).getTimezoneOffset();
+        return asUtc - offset * 60;
+      }
+      const parsed = Date.parse(raw);
+      if (!Number.isNaN(parsed)) return parsed / 1000;
+    }
+    return 0;
+  }
+
+  /** A changelist's description, whether P4V calls it "desc" or "Description". */
+  function changeDesc(row) {
+    return (field(row, "desc") || field(row, "Description")).trim();
+  }
+
+  /**
+   * P4V sometimes reports a selection as a URL,
+   * p4://[user@][server[:port]]/files/<depot path without its leading //>,
+   * e.g. "p4:///files/depot/main/Art" -> "//depot/main/Art".
+   * Other p4:// URLs aren't paths, so they're dropped. Anything else passes through.
+   */
+  function fromP4Url(value) {
+    if (!/^p4:\/\//i.test(value)) return value;
+    const match = value.match(/^p4:\/\/[^/]*\/files\/+([^?#]+)/i);
+    if (!match) return "";
+    // Only spaces are decoded: P4 itself writes @ # * % in paths as %40 %23 %2A %25.
+    return `//${match[1].replace(/%20/gi, " ")}`;
   }
 
   /**
@@ -428,6 +476,8 @@ const Toolkit = (() => {
     currentUser,
     currentClient,
     field,
+    changeTime,
+    changeDesc,
     selectedPaths,
     toFolderWildcard,
     isDepotPath,

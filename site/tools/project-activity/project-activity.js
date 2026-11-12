@@ -213,8 +213,8 @@
       const change = field(row, "change");
       if (change) {
         state.changes.set(change, {
-          desc: field(row, "desc").trim(),
-          time: field(row, "time"),
+          desc: Toolkit.changeDesc(row),
+          time: String(Toolkit.changeTime(row) || ""),
         });
       }
     }

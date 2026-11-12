@@ -138,6 +138,10 @@
     return i <= 1 ? "//" : path.slice(0, i);
   }
 
+  const timeOf = (row) => Toolkit.changeTime(row, state.serverOffset);
+  const goodTime = (t) => Number.isFinite(t) && t > 0;
+  const descOf = (row) => Toolkit.changeDesc(row).split(/\r?\n/)[0].slice(0, 160);
+
   const wild = (path) => (path === "//" ? "//..." : `${path}/...`);
   const childPath = (key) => (state.root === "//" ? `//${key}` : `${state.root}/${key}`);
 
@@ -289,13 +293,21 @@
       if (token !== state.token) return "stale";
       if (!result.ok && !result.data.length && !/no such|not in|no file/i.test(result.error)) throw new Error(result.error);
 
+      const firstRow = result.data.find((row) => Number(field(row, "change")));
+      if (firstRow && !goodTime(timeOf(firstRow))) {
+        const sample = Object.entries(firstRow)
+          .filter(([k]) => k !== "desc")
+          .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
+          .join(", ");
+        throw new Error(`P4V returned changelists without a readable submit time, so nothing can be placed on the timeline. First changelist: ${sample}`);
+      }
       const changes = result.data
         .map((row) => ({
           c: Number(field(row, "change")),
-          t: Number(field(row, "time")),
+          t: timeOf(row),
           u: field(row, "user"),
           w: field(row, "client"),
-          d: field(row, "desc").trim().split(/\r?\n/)[0].slice(0, 160),
+          d: descOf(row),
         }))
         .filter((ch) => ch.c)
         .sort((a, b) => b.c - a.c);
@@ -418,7 +430,13 @@
     state.budget = BUDGET_STEP;
     fresh.reset();
     hideNotice();
-    const [meta, saved] = await Promise.all([ActivityStore.getMeta(state.scope), ActivityStore.getChanges(state.scope)]);
+    let [meta, saved] = await Promise.all([ActivityStore.getMeta(state.scope), ActivityStore.getChanges(state.scope)]);
+    // History saved by an older version may have unreadable times; start that path over.
+    if ((saved || []).some((r) => !goodTime(r.t)) || (meta && meta.ranges.some((range) => !(range[2] > 0)))) {
+      await ActivityStore.clearScope(state.scope);
+      meta = null;
+      saved = [];
+    }
     if (meta) state.meta = meta;
     for (const record of saved || []) state.records.set(record.c, record);
     state.trends.animate = true;
@@ -645,6 +663,25 @@
   function noData() {
     if (state.loading && !state.records.size) return emptyView("Reading history…", "The first changelists will appear in a moment.");
     if (!state.records.size) return emptyView("Nothing here yet", `No submitted changelists were found under ${state.root}.`);
+    // History exists, but none of it falls in the chosen range (a quiet server, or a short range).
+    if (!state.loading && state.range !== "all") {
+      const [start, end] = windowBounds();
+      if (!selection(start, end, { ignoreUser: true, ignoreFolder: true }).length) {
+        const newest = d3.max(state.records.values(), (r) => r.t);
+        const label = ui.range.options[ui.range.selectedIndex].text.toLowerCase();
+        const view = emptyView(
+          `Nothing submitted in the ${label}`,
+          `The most recent changelist under ${state.root === "//" ? "any depot" : state.root} was on ${fmtDay(dateOf(newest))} (${ago(newest)}).`
+        );
+        const button = el("button", { type: "button", className: "tk-btn tk-btn-primary" }, "Show all time");
+        button.addEventListener("click", () => {
+          ui.range.value = "all";
+          ui.range.dispatchEvent(new Event("change"));
+        });
+        view.appendChild(button);
+        return view;
+      }
+    }
     return null;
   }
 
@@ -1562,7 +1599,7 @@
           if (myToken !== token) return;
           const row = result.data[0];
           const last = row
-            ? { path, c: Number(field(row, "change")), t: Number(field(row, "time")), u: field(row, "user"), d: field(row, "desc").trim().split(/\r?\n/)[0].slice(0, 160) }
+            ? { path, c: Number(field(row, "change")), t: timeOf(row), u: field(row, "user"), d: descOf(row) }
             : { path, c: 0 };
           await ActivityStore.putFolder({ ...last, checkedAt: Date.now() / 1000 });
           entry(path).last = last.c ? last : null;
@@ -2214,6 +2251,9 @@
     const info = await Toolkit.tryRun(["info"]);
     const row = info.data[0];
     state.server = field(row, "serverID") || field(row, "serverAddress") || "server";
+    // "2026/11/12 10:34:22 -0800 PST": dates in changelist forms are in this zone.
+    const zone = field(row, "serverDate").match(/\s([+-])(\d{2})(\d{2})\b/);
+    if (zone) state.serverOffset = (zone[1] === "-" ? -1 : 1) * (Number(zone[2]) * 60 + Number(zone[3]));
 
     ui.statusText.textContent = "Finding your workspace…";
     const start = await normalizeInput((await defaultPath().catch(() => "")) || store.get("recent", [])[0] || "");

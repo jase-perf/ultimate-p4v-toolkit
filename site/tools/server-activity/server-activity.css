@@ -538,6 +538,10 @@ body.dark-theme .ac-card-trend.is-down {
   color: var(--tk-text);
 }
 
+.ac-empty .tk-btn {
+  margin-top: 0.6rem;
+}
+
 /* ---------- Calendar ---------- */
 
 .ac-calendar {
