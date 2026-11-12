@@ -38,15 +38,19 @@ TABS = [
     ("Project Activity", "tools/project-activity/index.html", "project-activity"),
     ("Server Activity", "tools/server-activity/index.html", "server-activity"),
     ("Depot Size Map", "tools/depot-size-map/index.html", "depot-size-map"),
-    ("Typemap Editor", "tools/typemap/index.html", "typemap"),
+    ("Typemap Editor (Admin)", "tools/typemap/index.html", "typemap"),
     ("AI Help", "tools/ai-help/index.html", "ai-help"),
 ]
 
-# (name, path, P4V argument, P4Admin argument or None, width, height, refresh)
+# Tools that need elevated access say so in their name, so people can untick
+# them in P4V's Import Preview.
+#
+# (key, name, path, P4V argument, P4Admin argument or None, width, height, refresh)
+# The key seeds the window's Identifier, so renaming a window doesn't change it.
 WINDOWS = [
-    ("Revert Exclusive Checkouts", "tools/revert-exclusive-checkouts/index.html", "%D", "%F", 960, 760, True),
-    ("Project Activity (selected folders)", "tools/project-activity/index.html", "%D", None, 1280, 820, False),
-    ("Depot Size Map (selected folder)", "tools/depot-size-map/index.html", "%D", None, 1280, 820, False),
+    ("Revert Exclusive Checkouts", "Revert Exclusive Checkouts (Admin)", "tools/revert-exclusive-checkouts/index.html", "%D", "%F", 960, 760, True),
+    ("Project Activity (selected folders)", "Project Activity (selected folders)", "tools/project-activity/index.html", "%D", None, 1280, 820, False),
+    ("Depot Size Map (selected folder)", "Depot Size Map (selected folder)", "tools/depot-size-map/index.html", "%D", None, 1280, 820, False),
 ]
 
 CUSTOM_TOOLS = ["reset-password"]
@@ -83,11 +87,11 @@ def tabs_xml() -> str:
 
 def windows_xml(app: str) -> str:
     parts = [HEADER, '<HtmlWindowList varName="htmlwindowlist">\n']
-    for name, path, p4v_arg, admin_arg, width, height, refresh in WINDOWS:
+    for key, name, path, p4v_arg, admin_arg, width, height, refresh in WINDOWS:
         arg = p4v_arg if app == "p4v" else admin_arg
         if arg is None:
             continue
-        ident = uuid.uuid5(ID_NAMESPACE, f"{app}:{name}")
+        ident = uuid.uuid5(ID_NAMESPACE, f"{app}:{key}")
         parts.append(
             "  <HtmlWindow>\n"
             "    <Definition>\n"

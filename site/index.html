@@ -854,6 +854,11 @@
                 files), click <em>Import</em>, and choose the file.
               </p>
               <p>
+                P4V then lists every tool in the file. Untick any you don't
+                want. Tools marked <em>(Admin)</em> only work for admins and
+                super users, so everyone else can leave them out.
+              </p>
+              <p>
                 Open the new tabs from the <span class="menu-path">View</span>
                 menu. Right-click tools appear when you right-click files and
                 folders.
@@ -986,7 +991,7 @@
             shots: [["screenshots/revert-exclusive-checkouts.webp", "Window"]],
             desc:
               "Someone left a file exclusively checked out and isn't around to release it? Right-click the folder, see every exclusive checkout inside it with who has it and since when, and release the ones you pick.",
-            find: "Right-click files or folders > Revert Exclusive Checkouts",
+            find: "Right-click files or folders > Revert Exclusive Checkouts (Admin)",
             manual: [
               {
                 type: "HTML Window",
@@ -1005,7 +1010,7 @@
             shots: [["screenshots/typemap.webp", "Editor"]],
             desc:
               "Edit the server's typemap in a table instead of a text file. It warns you when one rule overrides another, and has ready-made templates for game projects.",
-            find: "View > Typemap Editor",
+            find: "View > Typemap Editor (Admin)",
             manual: [{ type: "HTML Tab", path: "tools/typemap/index.html" }],
           },
           {
@@ -1026,7 +1031,7 @@
             placeholder: ["RESET USER PASSWORD", "Right-click a user in P4Admin"],
             desc:
               "Give someone a temporary password and make them choose a new one when they next log in. The message to send them is copied for you. Needs the p4 command-line client.",
-            find: "Right-click a user > Reset User Password",
+            find: "Right-click a user > Reset User Password (Super User)",
             customTool: "reset-password",
             downloads: [
               ["xml/custom-tools-windows.xml", "Windows"],

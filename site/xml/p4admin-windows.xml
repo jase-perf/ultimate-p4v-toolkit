@@ -3,7 +3,7 @@
 <HtmlWindowList varName="htmlwindowlist">
   <HtmlWindow>
     <Definition>
-      <Name>Revert Exclusive Checkouts</Name>
+      <Name>Revert Exclusive Checkouts (Admin)</Name>
       <Url>https://jase.town/ultimate-p4v-toolkit/tools/revert-exclusive-checkouts/index.html</Url>
       <Argument>%F</Argument>
       <Shortcut></Shortcut>

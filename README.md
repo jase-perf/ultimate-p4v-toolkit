@@ -31,6 +31,8 @@ Download the definition files and import them. Modern P4V has HTML Tools on by d
 | [`p4admin-windows.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-windows.xml) | Revert Exclusive Checkouts for P4Admin | P4Admin: *Tools > Manage Tools > HTML Windows > Import* |
 | [`custom-tools-windows.xml`](https://jase.town/ultimate-p4v-toolkit/xml/custom-tools-windows.xml) / [`custom-tools-macos.xml`](https://jase.town/ultimate-p4v-toolkit/xml/custom-tools-macos.xml) | Reset User Password | *Tools > Manage Tools > Custom Tools > Import Custom Tools…* |
 
+When you import a file, P4V lists the tools in it so you can untick the ones you don't want. Tools that need elevated access say so in their name, like *Typemap Editor (Admin)*, so other users can leave them out.
+
 The files point at the live site, so tools update by themselves when this repo changes. To give your whole team the tabs and windows, a server admin can point P4V at the same URLs instead:
 
 ```

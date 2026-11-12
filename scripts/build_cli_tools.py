@@ -25,7 +25,7 @@ OUTPUT = ROOT / "site" / "custom-tools"
 
 TOOLS = {
     "reset-password": {
-        "name": "Reset User Password",
+        "name": "Reset User Password (Super User)",
         "description": (
             "Sets a random temporary password for the selected user, requires them to "
             "choose a new one at next login, and copies a ready-to-send message to your "
