@@ -1,349 +1,1246 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ultimate P4V Toolkit</title>
-    <link rel="stylesheet" type="text/css" href="shared/style.css" />
-    <link rel="stylesheet" type="text/css" href="shared/toolkit.css" />
+    <title>Ultimate P4V Toolkit | Jase Lindgren</title>
+    <meta
+      name="description"
+      content="Free tools for P4V and P4Admin: live maps of who has what checked out, server activity trends, depot sizes and more. Import one file and they appear in P4V."
+    />
+    <link rel="icon" type="image/png" href="icons/project-activity.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
-      .tk-app {
-        max-width: 64rem;
+      :root {
+        --bg: #eceef4;
+        --hero-top: #f2f3f9;
+        --hero-bottom: #e9ebf3;
+        --ink: #1a1a24;
+        --body: #3c3a4c;
+        --muted: #56545f;
+        --faint: #6a6a76;
+        --accent: #6a5fb0;
+        --teal: #46c8a2;
+        --violet: #a394f0;
+        --card: #fbfaff;
+        --line: rgba(60, 40, 120, 0.12);
+        --rule: rgba(60, 40, 120, 0.18);
+        --shadow: rgba(80, 60, 160, 0.07);
+        --shadow-hover: rgba(80, 60, 160, 0.16);
+        --code-bg: rgba(60, 40, 120, 0.07);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #15141c;
+          --hero-top: #1b1a24;
+          --hero-bottom: #15141c;
+          --ink: #f1effa;
+          --body: #c9c6d8;
+          --muted: #aeaabf;
+          --faint: #9894ab;
+          --accent: #b4a8f5;
+          --card: #1e1d28;
+          --line: rgba(180, 168, 245, 0.14);
+          --rule: rgba(180, 168, 245, 0.2);
+          --shadow: rgba(0, 0, 0, 0.3);
+          --shadow-hover: rgba(0, 0, 0, 0.5);
+          --code-bg: rgba(180, 168, 245, 0.1);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Space Mono", monospace;
+      }
+      a {
+        color: var(--accent);
+      }
+      code {
+        font-family: "Space Mono", monospace;
+        background: var(--code-bg);
+        padding: 1px 5px;
+        font-size: 0.92em;
+      }
+
+      @keyframes gradShift {
+        0% {
+          background-position: 0% 50%;
+        }
+        100% {
+          background-position: 200% 50%;
+        }
+      }
+      @keyframes glitch {
+        0%,
+        3.3%,
+        4.7%,
+        5.3%,
+        6.7%,
+        21.3%,
+        22.7%,
+        39.3%,
+        40.7%,
+        62.3%,
+        63.7%,
+        84.3%,
+        85.7%,
+        100% {
+          text-shadow: none;
+          transform: translate(0, 0);
+        }
+        4% {
+          text-shadow:
+            -1px 0 #46c8a2,
+            1px 0 #a394f0;
+          transform: translate(1px, 0);
+        }
+        6% {
+          text-shadow:
+            2px 0 #46c8a2,
+            -2px 0 #a394f0;
+          transform: translate(-1px, 0);
+        }
+        22% {
+          text-shadow: 1px 0 #a394f0;
+          transform: translate(0, 1px);
+        }
+        40% {
+          text-shadow: -1px 0 #46c8a2;
+          transform: translate(1px, 0);
+        }
+        63% {
+          text-shadow:
+            -1px 0 #a394f0,
+            1px 0 #46c8a2;
+          transform: translate(-1px, 0);
+        }
+        85% {
+          text-shadow:
+            -2px 0 #46c8a2,
+            1px 0 #a394f0;
+          transform: translate(0, -1px);
+        }
+      }
+      @keyframes waveMove {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-1180px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      /* ===== hero ===== */
+      .hero {
+        position: relative;
+        height: 340px;
+        overflow: hidden;
+        background: linear-gradient(180deg, var(--hero-top) 0%, var(--hero-bottom) 100%);
+      }
+      .wave {
+        position: absolute;
+        left: 50%;
+        margin-left: -1200px;
+      }
+      .wave-1 {
+        top: 40%;
+        transform: translateY(-50%);
+        opacity: 0.8;
+        filter: blur(3px);
+      }
+      .wave-2 {
+        top: 58%;
+        transform: translateY(-50%);
+        opacity: 0.42;
+        filter: blur(6px);
+      }
+      .wave-3 {
+        top: 30%;
+        transform: translateY(-50%);
+        opacity: 0.3;
+        filter: blur(9px);
+      }
+      .wave-1 g {
+        animation: waveMove 18s linear infinite;
+      }
+      .wave-2 g {
+        animation: waveMove 30s linear infinite;
+      }
+      .wave-3 g {
+        animation: waveMove 44s linear infinite;
+      }
+      .hero-inner {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 24px;
+      }
+      .eyebrow {
+        font-size: 12px;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        color: var(--faint);
+        margin-bottom: 16px;
+      }
+      .eyebrow a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .eyebrow a:hover {
+        color: var(--ink);
+      }
+      .hero h1 {
+        font-size: 58px;
+        font-weight: 700;
+        letter-spacing: -1px;
+        line-height: 1.05;
+        margin: 0;
+        background-image: linear-gradient(
+          100deg,
+          var(--ink) 0%,
+          var(--ink) 26%,
+          #2fb491 44%,
+          #9a7bf0 58%,
+          var(--ink) 74%,
+          var(--ink) 100%
+        );
+        background-size: 220% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+        animation: gradShift 7s linear infinite;
+      }
+      .roleline {
+        font-size: 14px;
+        color: var(--muted);
+        margin-top: 16px;
+        letter-spacing: 0.5px;
+      }
+
+      /* ===== body ===== */
+      .body {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 32px;
+      }
+      .intro-wrap {
+        padding: 48px 0 8px;
+        text-align: center;
+      }
+      .intro {
+        font-size: 16px;
+        line-height: 1.8;
+        color: var(--body);
+        max-width: 720px;
         margin: 0 auto;
       }
-      .tool-url {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
+      .intro + .intro {
+        margin-top: 14px;
       }
-      .tool-url code {
-        flex: 1;
-        word-break: break-all;
-      }
-      .tool-meta {
-        display: grid;
-        grid-template-columns: max-content 1fr;
-        gap: 0.25rem 1rem;
-        margin: 0.6rem 0 0.75rem;
-      }
-      .tool-meta dt {
-        color: var(--tk-muted);
-      }
-      .tk-card p + .tool-meta {
-        margin-top: 0.6rem;
+      .section {
+        padding: 48px 0 8px;
       }
       .section-title {
-        font-size: 1.15rem;
-        font-weight: 600;
-        margin: 1.5rem 0 0.35rem;
-      }
-      .section-intro {
-        margin-bottom: 0.85rem;
-      }
-      .os-block {
-        margin-top: 0.75rem;
-      }
-      .os-block h3 {
-        font-size: 0.95rem;
-        font-weight: 600;
-        margin-bottom: 0.35rem;
-      }
-      .tool-title {
+        font-size: 13px;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 24px;
+        font-weight: 400;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 14px;
       }
-      .tool-icon {
-        width: 28px;
-        height: 28px;
+      .section-title .rule {
+        flex: 1;
+        height: 1px;
+        background: var(--rule);
+      }
+      .section-lead {
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--body);
+        margin: -8px 0 24px;
+        max-width: 760px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      /* ===== cards ===== */
+      .card {
+        display: block;
+        background: var(--card);
+        border: 1px solid var(--line);
+        color: inherit;
+        box-shadow: 0 14px 30px var(--shadow);
+        transition:
+          transform 0.25s,
+          box-shadow 0.25s;
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 22px 44px var(--shadow-hover);
+      }
+      .card:hover .glitch {
+        animation: glitch 5s linear infinite;
+      }
+      .card-bar {
+        height: 5px;
+        background: linear-gradient(90deg, var(--teal), var(--violet));
+      }
+      .card-body {
+        padding: 22px 24px 20px;
+      }
+      .card-name {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .card-name img {
+        width: 24px;
+        height: 24px;
         object-fit: contain;
         flex: none;
       }
-      .install-list {
-        list-style: none;
-        margin: 0.5rem 0 0.6rem;
-        padding: 0;
-        display: grid;
-        gap: 0.4rem;
+      .card-desc {
+        font-size: 13px;
+        line-height: 1.65;
+        color: var(--muted);
+        margin: 12px 0 16px;
       }
-      .install-list a {
-        font-weight: 600;
+      .card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        font-size: 12px;
+        color: var(--faint);
       }
-      .field-row {
-        display: grid;
-        grid-template-columns: 6.5rem 1fr auto;
-        gap: 0.5rem;
-        align-items: start;
-        margin-bottom: 0.35rem;
+      .card-meta .dot {
+        width: 9px;
+        height: 9px;
+        display: inline-block;
+        margin-right: 7px;
+        border-radius: 50%;
+        vertical-align: 0;
       }
-      .field-row code {
+      .find {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 14px 0 0;
+        padding-top: 12px;
+        border-top: 1px dashed var(--line);
+        line-height: 1.6;
+      }
+      .find strong {
+        color: var(--accent);
+        font-weight: 400;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-size: 11px;
+        margin-right: 6px;
+      }
+
+      /* screenshots */
+      .shot {
         display: block;
-        max-height: 4.5rem;
+        position: relative;
+        aspect-ratio: 1400 / 860;
+        overflow: hidden;
+        border-bottom: 1px solid var(--line);
+        background: var(--hero-bottom);
+      }
+      .shot img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top left;
+        display: block;
+      }
+      .shot-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+      .shot-strip button {
+        all: unset;
+        cursor: pointer;
+        aspect-ratio: 1400 / 860;
+        overflow: hidden;
+        position: relative;
+        background: var(--card);
+      }
+      .shot-strip img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top left;
+        display: block;
+        opacity: 0.55;
+        transition: opacity 0.2s;
+      }
+      .shot-strip button:hover img,
+      .shot-strip button[aria-pressed="true"] img {
+        opacity: 1;
+      }
+      .shot-strip span {
+        position: absolute;
+        left: 6px;
+        bottom: 5px;
+        font-size: 10px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        background: var(--card);
+        color: var(--ink);
+        padding: 1px 6px;
+      }
+      .shot-strip button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+      }
+      .placeholder {
+        aspect-ratio: 1400 / 860;
+        background: linear-gradient(135deg, var(--teal), var(--violet));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: #fff;
+        font-size: 15px;
+        letter-spacing: 2px;
+        font-weight: 700;
+        text-align: center;
+        padding: 20px;
+      }
+      .placeholder small {
+        font-weight: 400;
+        letter-spacing: 0.5px;
+        font-size: 12px;
+        opacity: 0.9;
+      }
+
+      /* ===== install steps ===== */
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        counter-reset: step;
+      }
+      .step .card-body {
+        padding-top: 18px;
+      }
+      .step-num {
+        font-size: 11px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .step h3 {
+        font-size: 15px;
+        margin: 6px 0 10px;
+      }
+      .step p {
+        font-size: 13px;
+        line-height: 1.65;
+        color: var(--muted);
+        margin: 0 0 10px;
+      }
+      .step p:last-child {
+        margin-bottom: 0;
+      }
+      .menu-path {
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      .downloads {
+        display: grid;
+        gap: 10px;
+        margin-top: 4px;
+      }
+      .dl {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: var(--ink);
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        transition:
+          border-color 0.2s,
+          transform 0.2s;
+      }
+      .dl:hover {
+        border-color: var(--accent);
+        transform: translateX(3px);
+      }
+      .dl:hover .glitch {
+        animation: glitch 5s linear infinite;
+      }
+      .dl.primary {
+        background: linear-gradient(90deg, rgba(70, 200, 162, 0.16), rgba(163, 148, 240, 0.2));
+        border-color: rgba(106, 95, 176, 0.35);
+      }
+      .dl-arrow {
+        font-size: 16px;
+        color: var(--accent);
+        flex: none;
+      }
+      .dl-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .dl-name {
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .dl-what {
+        font-size: 11px;
+        color: var(--faint);
+        line-height: 1.5;
+      }
+      .admin-note {
+        margin-top: 20px;
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--muted);
+      }
+
+      /* ===== manual install ===== */
+      details.manual {
+        background: var(--card);
+        border: 1px solid var(--line);
+        box-shadow: 0 14px 30px var(--shadow);
+      }
+      details.manual > summary {
+        cursor: pointer;
+        list-style: none;
+        padding: 18px 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        font-size: 15px;
+      }
+      details.manual > summary::-webkit-details-marker {
+        display: none;
+      }
+      details.manual > summary::before {
+        content: "+";
+        color: var(--accent);
+        font-size: 20px;
+        width: 14px;
+        line-height: 1;
+      }
+      details.manual[open] > summary::before {
+        content: "−";
+      }
+      details.manual > summary:hover .glitch {
+        animation: glitch 5s linear infinite;
+      }
+      details.manual > summary .sub {
+        font-weight: 400;
+        font-size: 12px;
+        color: var(--faint);
+      }
+      .manual-body {
+        padding: 0 24px 24px;
+        border-top: 1px solid var(--line);
+      }
+      .manual-body > p {
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--muted);
+        margin: 18px 0 0;
+      }
+      .manual-tool {
+        padding: 18px 0;
+        border-bottom: 1px dashed var(--line);
+      }
+      .manual-tool:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+      }
+      .manual-tool h3 {
+        font-size: 14px;
+        margin: 0 0 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .tag {
+        font-size: 11px;
+        font-weight: 400;
+        color: var(--accent);
+        border: 1px solid var(--rule);
+        padding: 0 7px;
+        letter-spacing: 0.5px;
+      }
+      .fields {
+        display: grid;
+        grid-template-columns: 8.5rem 1fr auto;
+        gap: 6px 12px;
+        align-items: start;
+        font-size: 12px;
+      }
+      .fields dt {
+        color: var(--faint);
+        padding-top: 3px;
+      }
+      .fields dd {
+        margin: 0;
+        min-width: 0;
+      }
+      .fields dd code {
+        display: block;
+        max-height: 4.6em;
         overflow: auto;
         word-break: break-all;
         white-space: pre-wrap;
+        padding: 3px 7px;
       }
-      @media (prefers-color-scheme: dark) {
-        body {
-          background: #363636;
+      .fields .plain {
+        grid-column: 2 / 4;
+        color: var(--body);
+        padding-top: 3px;
+        line-height: 1.6;
+      }
+      .copy {
+        font: inherit;
+        font-size: 11px;
+        cursor: pointer;
+        background: none;
+        color: var(--accent);
+        border: 1px solid var(--rule);
+        padding: 3px 9px;
+        min-width: 4.8rem;
+      }
+      .copy:hover {
+        border-color: var(--accent);
+        color: var(--ink);
+      }
+      .os-label {
+        grid-column: 1 / 4;
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-top: 8px;
+      }
+      .source-cta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 22px;
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .source-cta a {
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .source-cta a:hover {
+        color: var(--ink);
+      }
+
+      /* ===== footer ===== */
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        padding: 36px 0;
+        margin-top: 48px;
+        border-top: 1px solid var(--rule);
+        font-size: 12px;
+        color: var(--faint);
+      }
+      .foot-link {
+        color: var(--muted);
+        text-decoration: none;
+      }
+      .foot-link:hover {
+        animation: glitch 5s linear infinite;
+        color: var(--ink);
+      }
+
+      /* ===== responsive ===== */
+      @media (max-width: 900px) {
+        .steps {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 720px) {
+        .hero {
+          height: 270px;
+        }
+        .hero h1 {
+          font-size: 34px;
+        }
+        .roleline {
+          font-size: 12px;
+        }
+        .body {
+          padding: 0 16px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .fields {
+          grid-template-columns: 1fr auto;
+        }
+        .fields dt,
+        .os-label {
+          grid-column: 1 / 3;
+        }
+        .fields .plain {
+          grid-column: 1 / 3;
+        }
+        .footer {
+          flex-direction: column;
+          align-items: flex-start;
         }
       }
     </style>
   </head>
   <body>
-    <main class="tk-app">
-      <header class="tk-header">
-        <h1>Ultimate P4V Toolkit</h1>
-        <p>
-          Custom tools for P4V and P4Admin, served from this site. Add a tool
-          by pointing a P4V or P4Admin tool definition at its URL. There's
-          nothing to install.
-        </p>
-      </header>
+    <!-- ===== HERO ===== -->
+    <div class="hero">
+      <svg class="wave wave-1" viewBox="0 0 1180 200" width="2400" height="220" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="wgA" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#46c8a2" />
+            <stop offset="1" stop-color="#a394f0" />
+          </linearGradient>
+        </defs>
+        <g>
+          <path
+            d="M0 100 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0"
+            stroke="url(#wgA)"
+            stroke-width="2.5"
+            fill="none"
+          />
+        </g>
+      </svg>
+      <svg class="wave wave-2" viewBox="0 0 1180 200" width="2400" height="220" preserveAspectRatio="none" aria-hidden="true">
+        <g>
+          <path
+            d="M0 100 q 98 38 196 0 q 98 -38 196 0 q 98 38 196 0 q 98 -38 196 0 q 98 38 196 0 q 98 -38 196 0 q 98 38 196 0 q 98 -38 196 0 q 98 38 196 0 q 98 -38 196 0 q 98 38 196 0 q 98 -38 196 0"
+            stroke="#9a7bf0"
+            stroke-width="2"
+            fill="none"
+          />
+        </g>
+      </svg>
+      <svg class="wave wave-3" viewBox="0 0 1180 200" width="2400" height="220" preserveAspectRatio="none" aria-hidden="true">
+        <g>
+          <path
+            d="M0 100 q 130 -50 260 0 q 130 50 260 0 q 130 -50 260 0 q 130 50 260 0 q 130 -50 260 0 q 130 50 260 0 q 130 -50 260 0 q 130 50 260 0 q 130 -50 260 0 q 130 50 260 0"
+            stroke="#46c8a2"
+            stroke-width="2"
+            fill="none"
+          />
+        </g>
+      </svg>
+      <div class="hero-inner">
+        <div class="eyebrow"><a href="https://jase.town/">jase.town</a> // p4v</div>
+        <h1>ULTIMATE P4V TOOLKIT</h1>
+        <div class="roleline">
+          Free&nbsp;&nbsp;·&nbsp;&nbsp;Nothing to install&nbsp;&nbsp;·&nbsp;&nbsp;Works in P4V and P4Admin
+        </div>
+      </div>
+    </div>
 
-      <div class="tk-notice">
-        <strong class="tk-notice-title">Install them all</strong>
-        <p>
-          Turn on HTML Tools in <em>Edit &gt; Preferences &gt; HTML Tools</em>.
-          Then download these files and import each one from
-          <em>Tools &gt; Manage Tools</em>, under the matching type.
+    <div class="body">
+      <div class="intro-wrap">
+        <p class="intro">
+          New tabs and right-click tools for P4V and P4Admin. See who has what
+          checked out, what's been changing across the server, and where all
+          the space is going.
         </p>
-        <ul class="install-list">
-          <li><a href="xml/tabs.xml" download>tabs.xml</a>: all five HTML Tabs, with icons. Import under <em>HTML Tabs</em>.</li>
-          <li><a href="xml/windows.xml" download>windows.xml</a>: Revert Exclusive Checkouts, plus Project Activity and Depot Size Map for the folders you right-click. Import under <em>HTML Windows</em> in P4V.</li>
-          <li><a href="xml/p4admin-windows.xml" download>p4admin-windows.xml</a>: Revert Exclusive Checkouts for P4Admin.</li>
-          <li><a href="xml/custom-tools-windows.xml" download>custom-tools-windows.xml</a> or <a href="xml/custom-tools-macos.xml" download>custom-tools-macos.xml</a>: Reset User Password. Import under <em>Custom Tools</em>.</li>
-        </ul>
-        <p class="tk-muted">
-          Or add any single tool by hand: add an HTML Tab or HTML Window with the
-          URL and settings shown on its card below.
+        <p class="intro">
+          They run inside P4V using the login you already have, so there's no
+          app to install and nothing to set up on the server. Import one file
+          and they show up in P4V, and they update by themselves whenever the
+          toolkit does.
         </p>
       </div>
 
-      <div id="tools"></div>
+      <!-- ===== INSTALL ===== -->
+      <section class="section" id="install">
+        <h2 class="section-title">install in a minute <span class="rule"></span></h2>
+        <div class="steps">
+          <div class="card step">
+            <div class="card-bar"></div>
+            <div class="card-body">
+              <div class="step-num">Step 1</div>
+              <h3>Turn on HTML Tools</h3>
+              <p>
+                In P4V, open
+                <span class="menu-path">Edit &gt; Preferences</span> (on macOS,
+                <span class="menu-path">P4V &gt; Preferences</span>), go to the
+                <span class="menu-path">HTML Tools</span> page, and switch
+                HTML Tools on.
+              </p>
+              <p>P4Admin has the same setting.</p>
+            </div>
+          </div>
 
-      <h2 class="section-title">Custom Tools (command line)</h2>
-      <p class="tk-muted section-intro">
-        These run a short script with the <code>p4</code> command line client,
-        which must be on your PATH. Add them under <em>Tools &gt; Manage Tools
-        &gt; Custom Tools</em> with <em>New &gt; Tool…</em>, using the values
-        for your operating system.
-      </p>
-      <div id="customTools"></div>
+          <div class="card step">
+            <div class="card-bar"></div>
+            <div class="card-body">
+              <div class="step-num">Step 2</div>
+              <h3>Download the tools</h3>
+              <div class="downloads">
+                <a class="dl primary" href="xml/tabs.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">tabs.xml</span>
+                    <span class="dl-what">The five tabs. Start here.</span>
+                  </span>
+                </a>
+                <a class="dl" href="xml/windows.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">windows.xml</span>
+                    <span class="dl-what">Right-click tools for P4V</span>
+                  </span>
+                </a>
+                <a class="dl" href="xml/p4admin-windows.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4admin-windows.xml</span>
+                    <span class="dl-what">Right-click tools for P4Admin</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+          </div>
 
-      <p class="tk-muted">
-        Source and license:
-        <a href="https://github.com/jase-perf/ultimate-p4v-toolkit">github.com/jase-perf/ultimate-p4v-toolkit</a>
-      </p>
-    </main>
+          <div class="card step">
+            <div class="card-bar"></div>
+            <div class="card-body">
+              <div class="step-num">Step 3</div>
+              <h3>Import them</h3>
+              <p>
+                Go to <span class="menu-path">Tools &gt; Manage Tools</span>,
+                pick <span class="menu-path">HTML Tabs…</span> (or
+                <span class="menu-path">HTML Windows…</span> for the window
+                files), click <em>Import</em>, and choose the file.
+              </p>
+              <p>
+                Open the new tabs from the <span class="menu-path">View</span>
+                menu. Right-click tools appear when you right-click files and
+                folders.
+              </p>
+            </div>
+          </div>
+        </div>
 
-    <script src="shared/toolkit.js"></script>
+        <p class="admin-note">
+          <strong>Running a team?</strong> A server admin can give everyone the
+          tabs and windows at once, with no importing, by pointing P4V at the
+          same files. See <a href="#manual">Manual install</a> below for the
+          commands.
+        </p>
+      </section>
+
+      <!-- ===== TOOLS ===== -->
+      <section class="section" id="tools">
+        <h2 class="section-title">the tools <span class="rule"></span></h2>
+        <div class="grid" id="toolGrid"></div>
+      </section>
+
+      <!-- ===== MANUAL ===== -->
+      <section class="section" id="manual">
+        <h2 class="section-title">manual install <span class="rule"></span></h2>
+        <details class="manual" id="manualDetails">
+          <summary>
+            <span class="glitch">Set up tools one at a time, or for your whole team</span>
+          </summary>
+          <div class="manual-body">
+            <p>
+              Each tool is a web page that P4V loads. To add one by hand, go to
+              <span class="menu-path">Tools &gt; Manage Tools</span>, add a new
+              HTML Tab or HTML Window, and fill in the values below.
+            </p>
+
+            <div id="manualTools"></div>
+
+            <div class="manual-tool">
+              <h3>Roll out to your whole team <span class="tag">Server admins</span></h3>
+              <dl class="fields" id="teamFields"></dl>
+              <p class="section-lead" style="margin: 10px 0 0; font-size: 12px">
+                P4V picks these up the next time people connect. P4Admin doesn't
+                read these properties, so P4Admin users still import the files.
+                If your server uses <code>P4VJS.HTMLAllowList</code>, add
+                <code>https://jase.town</code> to it.
+              </p>
+            </div>
+
+            <div class="source-cta">
+              <span>Want to change a tool or host your own copy? Everything is open source (MIT).</span>
+              <a href="https://github.com/jase-perf/ultimate-p4v-toolkit" target="_blank" rel="noopener"
+                ><span class="glitch">source on github →</span></a
+              >
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <div class="footer">
+        <div>
+          <a class="foot-link" href="https://jase.town/">jase.town</a>
+        </div>
+        <div>© 2026 Jase Lindgren for Perforce Software</div>
+      </div>
+    </div>
+
     <script>
       (() => {
-        if (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) {
-          document.body.classList.add("dark-theme");
-        }
+        const BASE = new URL(".", location.href);
+        const REPO = "https://github.com/jase-perf/ultimate-p4v-toolkit";
 
         const tools = [
           {
             name: "Project Activity",
-            path: "tools/project-activity/index.html",
             icon: "icons/project-activity.png",
-            kind: "HTML Tab",
-            description:
-              "A live, zoomable map of everything checked out under a path, coloured by who has it. Spot exclusive checkouts and files several people are editing at a glance.",
-            meta: [
-              ["Starts at", "Your workspace's stream (or its view); type any depot path to map it"],
-              ["Also works as", "An HTML Window with argument %D, to map the selected folders"],
-              ["Who can use it", "Everyone"],
+            kind: "Tab",
+            who: "Everyone",
+            shots: [["screenshots/project-activity.webp", "Map"]],
+            desc:
+              "A live map of every checked-out file in your project, coloured by who has it. Exclusive checkouts show a lock, and files that several people have open stand out, so you can see clashes before they happen.",
+            find:
+              "View > Project Activity. Or right-click folders > Project Activity (selected folders).",
+            manual: [
+              { type: "HTML Tab", path: "tools/project-activity/index.html" },
+              { type: "HTML Window", path: "tools/project-activity/index.html", arg: "%D", size: "1280 × 820" },
             ],
           },
           {
             name: "Server Activity",
-            path: "tools/server-activity/index.html",
             icon: "icons/server-activity.png",
-            kind: "HTML Tab",
-            description:
-              "Who's working where, and what's been changing: trends over time (by person, folder or action), a calendar of activity per stream, a freshness map of how recently each folder changed, and a people view. History is saved on the computer, so only new changelists are fetched next time.",
-            meta: [
-              ["Starts at", "The depot your workspace's stream is in; type any path to look elsewhere"],
-              ["Time range", "30 days to all time; long ranges load gradually and politely"],
-              ["Who can use it", "Everyone (shows the paths they have access to)"],
+            kind: "Tab",
+            who: "Everyone",
+            shots: [
+              ["screenshots/server-activity.webp", "Trends"],
+              ["screenshots/server-activity-calendar.webp", "Calendar"],
+              ["screenshots/server-activity-people.webp", "People"],
             ],
+            desc:
+              "Who's working where, and what's been changing. Trends over time by person, folder or action, a calendar of activity for each stream, and a map of which folders have gone quiet. History is saved on your computer, so it's quick the next time.",
+            find: "View > Server Activity",
+            manual: [{ type: "HTML Tab", path: "tools/server-activity/index.html" }],
           },
           {
             name: "Depot Size Map",
-            path: "tools/depot-size-map/index.html",
             icon: "icons/depot-size-map.png",
-            kind: "HTML Tab",
-            description:
-              "See where the space goes: a zoomable map of folder sizes, measured as you zoom so even huge depots open quickly. Compare what a sync downloads with everything stored on the server, include shelved files, and find the biggest files.",
-            meta: [
-              ["Starts at", "Your workspace's stream; zoom out to the whole depot or all depots"],
-              ["Also works as", "An HTML Window with argument %D, to map the selected folder"],
-              ["Who can use it", "Everyone (shows the files they have access to)"],
+            kind: "Tab",
+            who: "Everyone",
+            shots: [["screenshots/depot-size-map.webp", "Map"]],
+            desc:
+              "Find out where the space goes. Zoom through folders sized by how big they are, compare what a sync downloads with everything stored on the server, include shelved files, and find the biggest files. Opens quickly even on huge depots.",
+            find:
+              "View > Depot Size Map. Or right-click a folder > Depot Size Map (selected folder).",
+            manual: [
+              { type: "HTML Tab", path: "tools/depot-size-map/index.html" },
+              { type: "HTML Window", path: "tools/depot-size-map/index.html", arg: "%D", size: "1280 × 820" },
             ],
           },
           {
             name: "Revert Exclusive Checkouts",
-            path: "tools/revert-exclusive-checkouts/index.html",
             icon: "icons/revert-exclusive-checkouts.png",
-            kind: "HTML Window",
-            description:
-              "Find files checked out exclusively (+l) under the selected files or folders, and revert the checkouts so others can work on them.",
-            meta: [
-              ["Argument", "P4V: %D  ·  P4Admin: %F (files) or %r (folder)"],
-              ["Window size", "960 × 760"],
-              ["Who can use it", "Admins and super users"],
+            kind: "Right-click",
+            who: "Admins",
+            shots: [["screenshots/revert-exclusive-checkouts.webp", "Window"]],
+            desc:
+              "Someone left a file exclusively checked out and isn't around to release it? Right-click the folder, see every exclusive checkout inside it with who has it and since when, and release the ones you pick.",
+            find: "Right-click files or folders > Revert Exclusive Checkouts",
+            manual: [
+              {
+                type: "HTML Window",
+                path: "tools/revert-exclusive-checkouts/index.html",
+                arg: "%D in P4V, %F in P4Admin",
+                size: "960 × 760",
+                note: "Add to applicable context menus, and refresh P4V when the window closes",
+              },
             ],
           },
           {
             name: "Typemap Editor",
-            path: "tools/typemap/index.html",
             icon: "icons/typemap.png",
-            kind: "HTML Tab",
-            description:
-              "View and edit the server typemap, with templates for common project types.",
-            meta: [["Who can use it", "Admins and super users"]],
+            kind: "Tab",
+            who: "Admins",
+            shots: [["screenshots/typemap.webp", "Editor"]],
+            desc:
+              "Edit the server's typemap in a table instead of a text file. It warns you when one rule overrides another, and has ready-made templates for game projects.",
+            find: "View > Typemap Editor",
+            manual: [{ type: "HTML Tab", path: "tools/typemap/index.html" }],
           },
           {
             name: "AI Help",
-            path: "tools/ai-help/index.html",
             icon: "icons/ai-help.png",
-            kind: "HTML Tab",
-            description:
-              "Ask questions and get answers with links to the Perforce documentation and knowledge base.",
-            meta: [["Who can use it", "Everyone"]],
+            kind: "Tab",
+            who: "Everyone",
+            shots: [["screenshots/ai-help.webp", "Search"]],
+            desc:
+              "Ask a question about P4 in plain words and get an answer with links to the official documentation and knowledge base articles it came from.",
+            find: "View > AI Help",
+            manual: [{ type: "HTML Tab", path: "tools/ai-help/index.html" }],
+          },
+          {
+            name: "Reset User Password",
+            kind: "Right-click",
+            who: "Super users",
+            placeholder: ["RESET USER PASSWORD", "Right-click a user in P4Admin"],
+            desc:
+              "Give someone a temporary password and make them choose a new one when they next log in. The message to send them is copied for you. Needs the p4 command-line client.",
+            find: "Right-click a user > Reset User Password",
+            customTool: "reset-password",
+            downloads: [
+              ["xml/custom-tools-windows.xml", "Windows"],
+              ["xml/custom-tools-macos.xml", "macOS"],
+            ],
           },
         ];
 
-        const { el } = Toolkit;
-        const base = new URL(".", location.href);
-        const container = document.getElementById("tools");
+        // ---------- helpers ----------
+        function el(tag, attrs, ...children) {
+          const node = document.createElement(tag);
+          for (const [k, v] of Object.entries(attrs || {})) {
+            if (v == null || v === false) continue;
+            if (k === "className") node.className = v;
+            else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+            else node.setAttribute(k, v === true ? "" : v);
+          }
+          for (const c of children.flat()) {
+            if (c == null || c === false) continue;
+            node.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
+          }
+          return node;
+        }
 
+        async function copyText(text) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch {
+            const ta = el("textarea", { style: "position:fixed;opacity:0" });
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            let ok = false;
+            try {
+              ok = document.execCommand("copy");
+            } catch {}
+            ta.remove();
+            return ok;
+          }
+        }
+
+        function copyButton(value) {
+          const btn = el("button", { type: "button", className: "copy" }, "Copy");
+          btn.addEventListener("click", async () => {
+            const ok = await copyText(value);
+            btn.textContent = ok ? "Copied" : "Failed";
+            setTimeout(() => (btn.textContent = "Copy"), 1600);
+          });
+          return btn;
+        }
+
+        function field(label, value, copyable) {
+          return [
+            el("dt", {}, label),
+            copyable
+              ? [el("dd", {}, el("code", {}, value)), copyButton(value)]
+              : el("dd", { className: "plain" }, value),
+          ];
+        }
+
+        // ---------- tool cards ----------
+        const grid = document.getElementById("toolGrid");
         for (const tool of tools) {
-          const url = new URL(tool.path, base).href;
-          const status = el("span", { className: "tk-status" });
-          container.appendChild(
+          let media;
+          if (tool.shots) {
+            const [first] = tool.shots;
+            const img = el("img", { src: first[0], alt: `${tool.name}: ${first[1]}`, loading: "lazy" });
+            const link = el("a", { className: "shot", href: first[0], target: "_blank", rel: "noopener" }, img);
+            media = [link];
+            if (tool.shots.length > 1) {
+              const strip = el("div", { className: "shot-strip" });
+              tool.shots.forEach(([src, label], i) => {
+                const btn = el(
+                  "button",
+                  { type: "button", "aria-pressed": String(i === 0), "aria-label": `Show ${label}` },
+                  el("img", { src, alt: "", loading: "lazy" }),
+                  el("span", {}, label)
+                );
+                btn.addEventListener("click", () => {
+                  img.src = src;
+                  img.alt = `${tool.name}: ${label}`;
+                  link.href = src;
+                  strip.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+                });
+                strip.appendChild(btn);
+              });
+              media.push(strip);
+            }
+          } else {
+            media = el("div", { className: "placeholder" }, tool.placeholder[0], el("small", {}, tool.placeholder[1]));
+          }
+
+          const whoColor = tool.who === "Everyone" ? "#46c8a2" : "#e8b15a";
+          grid.appendChild(
             el(
-              "section",
-              { className: "tk-card" },
-              el(
-                "h2",
-                { className: "tool-title" },
-                el("img", { className: "tool-icon", src: tool.icon, alt: "" }),
-                `${tool.name} `,
-                el("span", { className: "tk-tag" }, tool.kind)
-              ),
-              el("p", {}, tool.description),
-              el(
-                "dl",
-                { className: "tool-meta" },
-                tool.meta.flatMap(([label, value]) => [el("dt", {}, label), el("dd", {}, value)])
-              ),
+              "div",
+              { className: "card" },
+              el("div", { className: "card-bar" }),
+              media,
               el(
                 "div",
-                { className: "tool-url" },
-                el("code", {}, url),
+                { className: "card-body" },
                 el(
-                  "button",
-                  {
-                    type: "button",
-                    className: "tk-btn",
-                    onclick: async () => {
-                      const ok = await Toolkit.copyText(url);
-                      Toolkit.setStatus(status, ok ? "Copied" : "Copy failed", ok ? "success" : "error");
-                    },
-                  },
-                  "Copy URL"
+                  "h3",
+                  { className: "card-name" },
+                  tool.icon && el("img", { src: tool.icon, alt: "" }),
+                  el("span", { className: "glitch" }, tool.name)
                 ),
-                status
+                el("p", { className: "card-desc" }, tool.desc),
+                el(
+                  "div",
+                  { className: "card-meta" },
+                  el("span", {}, el("span", { className: "dot", style: `background:${whoColor}` }), tool.who),
+                  el("span", {}, tool.kind === "Tab" ? "P4V tab" : "Right-click tool")
+                ),
+                el(
+                  "p",
+                  { className: "find" },
+                  el("strong", {}, "find it"),
+                  tool.find,
+                  tool.downloads &&
+                    el(
+                      "span",
+                      {},
+                      el("br"),
+                      el("strong", {}, "install"),
+                      "Import ",
+                      tool.downloads.flatMap(([href, label], i) => [
+                        i ? " or " : "",
+                        el("a", { href, download: true }, `the ${label} file`),
+                      ]),
+                      " under Manage Tools > Custom Tools."
+                    )
+                )
               )
             )
           );
         }
 
-        // ---------- Custom Tools (generated by scripts/build_cli_tools.py) ----------
-        const REPO = "https://github.com/jase-perf/ultimate-p4v-toolkit";
-        const customTools = ["reset-password"];
-        const customContainer = document.getElementById("customTools");
-
-        function copyRow(label, value) {
-          const status = el("span", { className: "tk-status" });
-          return el(
+        // ---------- manual install ----------
+        const manual = document.getElementById("manualTools");
+        for (const tool of tools) {
+          const block = el(
             "div",
-            { className: "field-row" },
-            el("strong", {}, label),
-            el("code", {}, value),
-            el(
-              "div",
-              {},
-              el(
-                "button",
-                {
-                  type: "button",
-                  className: "tk-btn",
-                  onclick: async () => {
-                    const ok = await Toolkit.copyText(value);
-                    Toolkit.setStatus(status, ok ? "Copied" : "Copy failed", ok ? "success" : "error");
-                  },
-                },
-                "Copy"
-              ),
-              " ",
-              status
-            )
+            { className: "manual-tool" },
+            el("h3", {}, tool.name, el("span", { className: "tag" }, tool.who))
           );
+          const fields = el("dl", { className: "fields" });
+          for (const m of tool.manual || []) {
+            fields.append(el("div", { className: "os-label" }, m.type), ...field("URL", new URL(m.path, BASE).href, true).flat());
+            if (m.arg) fields.append(...field("Argument", m.arg).flat());
+            if (m.size) fields.append(...field("Window size", m.size).flat());
+            if (m.type === "HTML Window")
+              fields.append(...field("Options", m.note || "Add to applicable context menus").flat());
+          }
+          block.appendChild(fields);
+          manual.appendChild(block);
+
+          if (tool.customTool) {
+            fetch(`custom-tools/${tool.customTool}.json`)
+              .then((r) => r.json())
+              .then((def) => {
+                fields.append(
+                  ...field("Add it as", "Custom Tool (Tools > Manage Tools > Custom Tools > New > Tool…)").flat(),
+                  ...field("Options", def.options.join(", ")).flat(),
+                  ...field(
+                    "Note",
+                    "Paste the Arguments exactly as shown, without adding quotes. They contain the script encoded as base64."
+                  ).flat(),
+                  el("div", { className: "os-label" }, "Windows"),
+                  ...field("Application", def.windows.application, true).flat(),
+                  ...field("Arguments", def.windows.arguments, true).flat(),
+                  el("dt", {}, "Source"),
+                  el("dd", { className: "plain" }, el("a", { href: `${REPO}/blob/main/${def.windows.source}` }, def.windows.source)),
+                  el("div", { className: "os-label" }, "macOS"),
+                  ...field("Application", def.macos.application, true).flat(),
+                  ...field("Arguments", def.macos.arguments, true).flat(),
+                  el("dt", {}, "Source"),
+                  el("dd", { className: "plain" }, el("a", { href: `${REPO}/blob/main/${def.macos.source}` }, def.macos.source))
+                );
+              })
+              .catch((err) => {
+                fields.append(...field("Error", `Couldn't load this tool's settings: ${err.message}`).flat());
+              });
+          }
         }
 
-        for (const id of customTools) {
-          fetch(`custom-tools/${id}.json`)
-            .then((response) => response.json())
-            .then((tool) => {
-              customContainer.appendChild(
-                el(
-                  "section",
-                  { className: "tk-card" },
-                  el("h2", {}, `${tool.name} `, el("span", { className: "tk-tag" }, "Custom Tool")),
-                  el("p", {}, tool.description),
-                  el(
-                    "dl",
-                    { className: "tool-meta" },
-                    el("dt", {}, "Add it in"),
-                    el("dd", {}, tool.where),
-                    el("dt", {}, "Options"),
-                    el("dd", {}, tool.options.join(", "))
-                  ),
-                  el(
-                    "p",
-                    { className: "tk-muted" },
-                    "Paste the Arguments exactly as shown, without adding quotes. They contain the script encoded as base64; read the source: ",
-                    el("a", { href: `${REPO}/blob/main/${tool.windows.source}` }, "Windows"),
-                    " · ",
-                    el("a", { href: `${REPO}/blob/main/${tool.macos.source}` }, "macOS"),
-                    "."
-                  ),
-                  el(
-                    "div",
-                    { className: "os-block" },
-                    el("h3", {}, "Windows"),
-                    copyRow("Application", tool.windows.application),
-                    copyRow("Arguments", tool.windows.arguments)
-                  ),
-                  el(
-                    "div",
-                    { className: "os-block" },
-                    el("h3", {}, "macOS"),
-                    copyRow("Application", tool.macos.application),
-                    copyRow("Arguments", tool.macos.arguments)
-                  )
-                )
-              );
-            })
-            .catch((err) => {
-              Toolkit.renderNotice(customContainer, "error", "Couldn't load the Custom Tools list", [err.message]);
-            });
-        }
+        const team = document.getElementById("teamFields");
+        team.append(
+          ...field("Tabs", `p4 property -a -n P4VJS.HTMLTabs -v ${new URL("xml/tabs.xml", BASE).href}`, true).flat(),
+          ...field("Windows", `p4 property -a -n P4VJS.HTMLWindows -v ${new URL("xml/windows.xml", BASE).href}`, true).flat()
+        );
+
+        // Open the manual section when linked to directly.
+        const details = document.getElementById("manualDetails");
+        const openIfManual = () => {
+          if (location.hash === "#manual") details.open = true;
+        };
+        openIfManual();
+        window.addEventListener("hashchange", openIfManual);
+        document.querySelectorAll('a[href="#manual"]').forEach((a) =>
+          a.addEventListener("click", () => (details.open = true))
+        );
       })();
     </script>
   </body>
