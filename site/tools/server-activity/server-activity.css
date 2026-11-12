@@ -405,7 +405,8 @@ body.dark-theme .ac-card-trend.is-down {
   font-size: 0.85rem;
 }
 
-.ac-toolbar label {
+.ac-toolbar label,
+.ac-toolbar-group {
   color: var(--tk-muted);
   display: inline-flex;
   align-items: center;
@@ -1258,4 +1259,101 @@ body.dark-theme .ac-tooltip {
 .ac-dates input[type="date"] {
   padding: 0.3rem 0.4rem;
   color-scheme: light dark;
+}
+
+/* ---------- Inactive ---------- */
+
+.ac-idle {
+  min-height: 0;
+}
+
+.ac-idle-summary {
+  font-size: 0.92rem;
+}
+
+.ac-idle-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--ac-panel-border);
+  border-radius: 10px;
+  background: var(--ac-panel);
+}
+
+.ac-idle-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.ac-idle-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.5rem 0.7rem;
+  background: var(--ac-panel);
+  border-bottom: 1px solid var(--ac-panel-border);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--tk-muted);
+  white-space: nowrap;
+}
+
+.ac-idle-table th,
+.ac-idle-table td {
+  border-left: 0;
+  border-right: 0;
+}
+
+.ac-idle-table td {
+  padding: 0.4rem 0.7rem;
+  border-bottom: 1px solid var(--ac-panel-border);
+  vertical-align: top;
+}
+
+.ac-idle-table td small {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--tk-muted);
+}
+
+.ac-idle-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ac-idle-table tr.is-idle td {
+  background: rgba(242, 95, 92, 0.07);
+}
+
+.ac-idle-name {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--tk-accent);
+  font-family: Consolas, "SF Mono", Menlo, monospace;
+  font-size: 0.86rem;
+  text-align: left;
+  cursor: pointer;
+  word-break: break-all;
+}
+
+.ac-idle-name:hover {
+  text-decoration: underline;
+}
+
+.ac-idle-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  background: #f25f5c;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
 }

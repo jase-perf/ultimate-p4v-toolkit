@@ -62,6 +62,7 @@
     scope: "",
     server: "",
     custom: { from: "", to: "" }, // "YYYY-MM-DD" days, when range is "custom"
+    idle: { days: "182", only: false }, // the Inactive view: how long counts as inactive
     range: "90",
     view: "trends",
     records: new Map(), // change number -> summary
@@ -456,6 +457,7 @@
     state.processed = 0;
     state.budget = BUDGET_STEP;
     fresh.reset();
+    idle.reset();
     hideNotice();
     let [meta, saved] = await Promise.all([ActivityStore.getMeta(state.scope), ActivityStore.getChanges(state.scope)]);
     // History saved by an older version may have unreadable times; start that path over.
@@ -534,7 +536,7 @@
   // Where you are, kept in the URL so P4V's Back and Forward work
   // ---------------------------------------------------------------------------
 
-  const VIEWS = ["trends", "calendar", "freshness", "people"];
+  const VIEWS = ["trends", "calendar", "freshness", "people", "inactive"];
   const RANGES = ["30", "90", "182", "365", "730", "all", "custom"];
 
   /** The path being looked at, including a folder filter: "//depot" + "main" -> "//depot/main". */
@@ -556,6 +558,7 @@
         from: state.range === "custom" ? state.custom.from : null,
         to: state.range === "custom" ? state.custom.to : null,
         people: state.view === "people" ? state.people.mode : null,
+        idle: state.view === "inactive" ? state.idle.days : null,
       },
       push
     );
@@ -572,6 +575,7 @@
       range: RANGES.includes(range) ? range : null,
       custom: { from: DAY_TEXT.test(params.get("from")) ? params.get("from") : "", to: DAY_TEXT.test(params.get("to")) ? params.get("to") : "" },
       people: params.get("people") === "where" ? "where" : params.get("people") === "activity" ? "activity" : null,
+      idle: ["90", "182", "365", "730"].includes(params.get("idle")) ? params.get("idle") : null,
     };
   }
 
@@ -617,6 +621,7 @@
     const wanted = fromUrl();
     if (wanted.view) state.view = wanted.view;
     if (wanted.people) state.people.mode = wanted.people;
+    if (wanted.idle) state.idle.days = wanted.idle;
     const rangeChanged =
       wanted.range && (wanted.range !== state.range || (wanted.range === "custom" && (wanted.custom.from !== state.custom.from || wanted.custom.to !== state.custom.to)));
     if (wanted.range) showRange(wanted.range, wanted.custom);
@@ -648,6 +653,7 @@
     if (state.view === "trends") renderTrends();
     else if (state.view === "calendar") renderCalendar();
     else if (state.view === "freshness") fresh.render();
+    else if (state.view === "inactive") idle.render();
     else renderPeople();
   }
 
@@ -2099,6 +2105,356 @@
     return svg;
   }
 
+  // ---------------------------------------------------------------------------
+  // Inactive: branches nobody has submitted to for a while, as candidates to archive
+  // ---------------------------------------------------------------------------
+
+  const IDLE_SPANS = [
+    ["90", "3 months"],
+    ["182", "6 months"],
+    ["365", "1 year"],
+    ["730", "2 years"],
+  ];
+
+  function bytes(n) {
+    if (!n) return "0 B";
+    const units = ["B", "KB", "MB", "GB", "TB", "PB"];
+    const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
+    return `${(n / 1024 ** i).toFixed(i ? 1 : 0)} ${units[i]}`;
+  }
+
+  /** Open a branch in the Trends view: a filter if it's just below what's loaded, else a new path. */
+  function openBranch(path) {
+    remember(path);
+    if (String(parentOf(path)).toLowerCase() === state.root.toLowerCase()) {
+      setFilter({ folder: path.slice(state.root === "//" ? 2 : state.root.length + 1), user: null }, "trends");
+      return;
+    }
+    syncUrl(false);
+    state.view = "trends";
+    openScope(path);
+    syncUrl(true);
+  }
+
+  const idle = (() => {
+    let token = 0;
+    let scope = ""; // the path the list was built for
+    let branches = null; // [{ path, kind, parent, last, files, size }]; last: undefined = checking, null = never
+    let error = "";
+    let queue = [];
+    let working = false;
+    let forceAfter = 0;
+
+    function reset() {
+      token += 1;
+      scope = "";
+      branches = null;
+      error = "";
+      queue = [];
+    }
+
+    function refresh() {
+      forceAfter = Date.now() / 1000;
+      reset();
+      if (state.view === "inactive") render();
+    }
+
+    /** The branches under a path: its streams, plus the top folders of local depots (or its own folders). */
+    async function list(root) {
+      const found = new Map();
+      const add = (path, kind, parent) => {
+        if (path && !found.has(path.toLowerCase())) found.set(path.toLowerCase(), { path, kind, parent, last: undefined, files: null, size: null });
+      };
+      const streams = await Toolkit.tryRun(["streams", ...(root === "//" ? [] : [`${root}/...`])]);
+      for (const row of streams.data) add(field(row, "Stream"), (field(row, "Type") || "stream").toLowerCase(), field(row, "Parent"));
+      let folders = [];
+      if (root === "//") {
+        const depots = await Toolkit.tryRun(["depots"]);
+        folders = Toolkit.depotsFrom(depots.data)
+          .filter((d) => d.hint === "local")
+          .map((d) => d.path);
+      } else if (!found.size) {
+        folders = [root];
+      }
+      for (let i = 0; i < folders.length; i += 100) {
+        const chunk = folders.slice(i, i + 100);
+        const result = await Toolkit.tryRun(["dirs", ...chunk.map((p) => `${p}/*`)]);
+        for (const row of result.data) add(field(row, "dir"), "folder", "");
+      }
+      return [...found.values()];
+    }
+
+    /** A branch's key in the saved history (one or two folders below what's loaded), or null. */
+    function keyOf(path) {
+      let rel = null;
+      if (state.root === "//") rel = path.slice(2);
+      else if (path.toLowerCase().startsWith(`${state.root.toLowerCase()}/`)) rel = path.slice(state.root.length + 1);
+      return rel && rel.split("/").length <= 2 ? rel : null;
+    }
+
+    function historyIndex() {
+      const latest = new Map();
+      const counts = new Map();
+      const [start, end] = windowBounds();
+      for (const r of state.records.values()) {
+        for (const key of [...Object.keys(r.f1).filter(Boolean), ...Object.keys(r.f2)]) {
+          const cur = latest.get(key);
+          if (!cur || r.t > cur.t) latest.set(key, r);
+          if (r.t >= start && r.t <= end) counts.set(key, (counts.get(key) || 0) + 1);
+        }
+      }
+      return { latest, counts };
+    }
+
+    /** Fill in each branch's last submit: from history when it's complete enough, the saved cache, or the server. */
+    async function resolve(myToken) {
+      const since = coveredSince();
+      const { latest } = historyIndex();
+      for (const b of branches) {
+        if (b.last !== undefined || b.queued) continue;
+        if (b.kind === "virtual") {
+          b.last = null; // owns no files; it follows its parent
+          continue;
+        }
+        const key = keyOf(b.path);
+        const r = key !== null ? latest.get(key) : null;
+        if (r && since !== null && r.t >= since) {
+          b.last = { c: r.c, t: r.t, u: r.u, d: r.d };
+          continue;
+        }
+        if (key !== null && !r && since === -Infinity) {
+          b.last = null; // complete history, and nothing ever touched it
+          continue;
+        }
+        const saved = await ActivityStore.getFolder(b.path);
+        if (myToken !== token) return;
+        if (saved && saved.checkedAt > Date.now() / 1000 - FOLDER_TTL && saved.checkedAt > forceAfter) {
+          b.last = saved.c ? saved : null;
+          continue;
+        }
+        b.queued = true;
+        queue.push(b);
+      }
+      work();
+    }
+
+    async function work() {
+      if (working) return;
+      working = true;
+      const myToken = token;
+      try {
+        while (queue.length && myToken === token) {
+          const b = queue.shift();
+          const result = await politeRun(["changes", "-s", "submitted", "-L", "-m", "1", wild(b.path)]);
+          if (myToken !== token) return;
+          const row = result.data[0];
+          const last = row ? { path: b.path, c: Number(field(row, "change")), t: timeOf(row), u: field(row, "user"), d: descOf(row) } : { path: b.path, c: 0 };
+          await ActivityStore.putFolder({ ...last, checkedAt: Date.now() / 1000 });
+          b.last = last.c ? last : null;
+          scheduleDraw();
+        }
+      } finally {
+        working = false;
+        if (queue.length && myToken !== token) work(); // a newer list is waiting
+        scheduleDraw();
+      }
+    }
+
+    /** File counts and sizes (latest revisions), a few dozen branches per request. */
+    async function measure(myToken) {
+      const todo = branches.filter((b) => b.kind !== "virtual" && b.files === null);
+      for (let i = 0; i < todo.length; i += 50) {
+        const chunk = todo.slice(i, i + 50);
+        const result = await politeRun(["sizes", "-s", ...chunk.map((b) => wild(b.path))]);
+        if (myToken !== token) return;
+        const rows = new Map(result.data.map((row) => [field(row, "path").toLowerCase(), row]));
+        for (const b of chunk) {
+          const row = rows.get(wild(b.path).toLowerCase());
+          b.files = row ? Number(field(row, "fileCount")) || 0 : 0;
+          b.size = row ? Number(field(row, "fileSize")) || 0 : 0;
+        }
+        scheduleDraw();
+      }
+    }
+
+    async function load(path) {
+      const myToken = token;
+      try {
+        const found = await list(path);
+        if (myToken !== token) return;
+        branches = found;
+        draw();
+        resolve(myToken);
+        measure(myToken);
+      } catch (err) {
+        if (myToken !== token) return;
+        error = err.message;
+        draw();
+      }
+    }
+
+    let drawTimer = 0;
+    function scheduleDraw() {
+      if (drawTimer) return;
+      drawTimer = setTimeout(() => {
+        drawTimer = 0;
+        draw();
+      }, 400);
+    }
+
+    function render() {
+      const path = shownPath();
+      if (scope !== path) {
+        reset();
+        scope = path;
+        load(path);
+      } else if (branches) {
+        resolve(token); // the history may have grown since
+      }
+      draw();
+    }
+
+    function draw() {
+      if (state.view !== "inactive") return;
+      const span = IDLE_SPANS.find(([key]) => key === state.idle.days) || IDLE_SPANS[1];
+      const cutoff = Date.now() / 1000 - Number(span[0]) * DAY;
+      const isIdle = (b) => b.kind !== "virtual" && (b.last === null || (b.last && b.last.t < cutoff));
+      const where = scope === "//" ? "in all depots" : `under ${scope}`;
+
+      const toolbar = el(
+        "div",
+        { className: "ac-toolbar" },
+        el(
+          "span",
+          { className: "ac-toolbar-group" },
+          "Inactive means nothing submitted for",
+          segment(IDLE_SPANS, span[0], (value) => {
+            syncUrl(false);
+            state.idle.days = value;
+            store.set("idleDays", value);
+            syncUrl(true);
+            draw();
+          })
+        ),
+        el(
+          "label",
+          {},
+          el("input", {
+            type: "checkbox",
+            checked: state.idle.only,
+            onchange: (event) => {
+              state.idle.only = event.target.checked;
+              store.set("idleOnly", state.idle.only);
+              draw();
+            },
+          }),
+          "Inactive only"
+        )
+      );
+
+      const old = ui.view.querySelector(".ac-idle-wrap");
+      const scrollTop = old ? old.scrollTop : 0;
+      let body;
+      if (error) body = emptyView("Couldn't list the branches", error);
+      else if (!branches) body = emptyView("Finding branches…", `Reading the streams and folders ${where}.`);
+      else if (!branches.length) body = emptyView("No branches here", `No streams or folders were found ${where}.`);
+      else body = table(isIdle);
+
+      let summary = null;
+      if (branches && branches.length) {
+        const real = branches.filter((b) => b.kind !== "virtual");
+        const idleOnes = real.filter(isIdle);
+        const checking = real.filter((b) => b.last === undefined).length;
+        const files = d3.sum(idleOnes, (b) => b.files || 0);
+        const size = d3.sum(idleOnes, (b) => b.size || 0);
+        summary = el(
+          "p",
+          { className: "ac-idle-summary" },
+          el("strong", {}, `${fmt(idleOnes.length)} of ${fmt(real.length)}`),
+          ` branches ${where} have had nothing submitted for ${span[1]}`,
+          idleOnes.length && size ? `, holding ${fmt(files)} files (${bytes(size)})` : "",
+          ".",
+          checking ? el("span", { className: "tk-muted" }, ` Checking ${fmt(checking)} more…`) : null
+        );
+      }
+
+      const pane = el(
+        "div",
+        { className: "ac-pane ac-idle" },
+        toolbar,
+        summary,
+        branches && branches.length
+          ? el(
+              "p",
+              { className: "ac-panel-note" },
+              "Candidates to review before archiving, oldest first. Check with the people who worked there before removing anything. Click a branch to see its activity."
+            )
+          : null,
+        body
+      );
+      ui.view.replaceChildren(pane);
+      const wrap = pane.querySelector(".ac-idle-wrap");
+      if (wrap) wrap.scrollTop = scrollTop;
+    }
+
+    function table(isIdle) {
+      const { counts } = historyIndex();
+      const order = (b) => (b.kind === "virtual" ? 3e9 : b.last === undefined ? 2e9 : b.last === null ? -1 : b.last.t);
+      const shown = branches
+        .filter((b) => !state.idle.only || isIdle(b))
+        .sort((a, b) => order(a) - order(b) || a.path.localeCompare(b.path));
+      const rows = shown.map((b) => {
+        const key = keyOf(b.path);
+        const count = key !== null && b.kind !== "virtual" ? counts.get(key) || 0 : null;
+        let last;
+        if (b.kind === "virtual") last = el("td", { className: "tk-muted" }, "Virtual: shows its parent's files");
+        else if (b.last === undefined) last = el("td", { className: "tk-muted" }, "Checking…");
+        else if (b.last === null) last = el("td", {}, el("strong", {}, "Never"));
+        else last = el("td", { title: b.last.d || "" }, fmtShort(dateOf(b.last.t)), el("small", {}, `${ago(b.last.t)} · change ${b.last.c}`));
+        return el(
+          "tr",
+          { className: isIdle(b) ? "is-idle" : "" },
+          el(
+            "td",
+            {},
+            el("button", { type: "button", className: "ac-idle-name", title: `Show activity in ${b.path}`, onclick: () => openBranch(b.path) }, b.path),
+            el("small", {}, b.kind === "folder" ? "folder" : `${b.kind} stream`, isIdle(b) ? el("span", { className: "ac-idle-badge" }, "Inactive") : null)
+          ),
+          last,
+          el("td", {}, b.last ? state.names.get(b.last.u) || b.last.u : ""),
+          el("td", { className: "num" }, count === null ? "" : fmt(count)),
+          el("td", { className: "num" }, b.files === null ? (b.kind === "virtual" ? "" : "…") : fmt(b.files)),
+          el("td", { className: "num" }, b.size === null ? "" : bytes(b.size))
+        );
+      });
+      return el(
+        "div",
+        { className: "ac-idle-wrap" },
+        el(
+          "table",
+          { className: "ac-idle-table" },
+          el(
+            "thead",
+            {},
+            el(
+              "tr",
+              {},
+              el("th", {}, "Branch"),
+              el("th", {}, "Last submit"),
+              el("th", {}, "By"),
+              el("th", { className: "num", title: "From the saved history, for branches one or two folders down" }, `Changelists, ${rangeLabel()}`),
+              el("th", { className: "num" }, "Files"),
+              el("th", { className: "num" }, "Size")
+            )
+          ),
+          el("tbody", {}, rows.length ? rows : el("tr", {}, el("td", { colspan: "6", className: "tk-muted" }, "Everything here has had a submit recently.")))
+        )
+      );
+    }
+
+    return { render, reset, refresh };
+  })();
+
   function renderPeople() {
     const empty = noData();
     if (empty) {
@@ -2341,6 +2697,8 @@
     if (saved) Object.assign(state.trends, saved);
     state.calendar.metric = store.get("calendarMetric", "changes");
     state.people.mode = store.get("peopleMode", "activity") === "where" ? "where" : "activity";
+    state.idle.days = String(store.get("idleDays", "182"));
+    state.idle.only = !!store.get("idleOnly", false);
     state.includeMerges = store.get("includeMerges", true) !== false;
     picker = Toolkit.pathPicker({ input: ui.path, form: ui.form, recent: () => store.get("recent", []) });
 
@@ -2380,6 +2738,7 @@
     ui.dateTo.addEventListener("change", datesChanged);
     ui.refresh.addEventListener("click", () => {
       fresh.refresh();
+      idle.refresh();
       state.trends.animate = true;
       ensureLoaded();
       render();
@@ -2438,6 +2797,7 @@
     const wanted = fromUrl();
     if (wanted.view) state.view = wanted.view;
     if (wanted.people) state.people.mode = wanted.people;
+    if (wanted.idle) state.idle.days = wanted.idle;
     if (wanted.range) showRange(wanted.range, wanted.custom);
     if (wanted.path) {
       ui.path.value = wanted.path;
