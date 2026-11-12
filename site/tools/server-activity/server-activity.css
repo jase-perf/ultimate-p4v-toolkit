@@ -1357,3 +1357,19 @@ body.dark-theme .ac-tooltip {
   font-weight: 700;
   letter-spacing: 0.03em;
 }
+
+.ac-idle-table tr.is-head td {
+  background: var(--tk-row-hover);
+}
+
+.ac-idle-table tr.is-head.is-idle td {
+  background: rgba(242, 95, 92, 0.12);
+}
+
+.ac-idle-table tr.is-head .ac-idle-name {
+  font-weight: 700;
+}
+
+.ac-idle-table tr.is-child td:first-child {
+  padding-left: 1.8rem;
+}

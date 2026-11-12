@@ -62,7 +62,7 @@
     scope: "",
     server: "",
     custom: { from: "", to: "" }, // "YYYY-MM-DD" days, when range is "custom"
-    idle: { days: "182", only: false }, // the Inactive view: how long counts as inactive
+    idle: { days: "182", only: false, list: "branches" }, // the Inactive view: how long counts as inactive
     stream: null, // when the path is a stream: its full view { include, exclude }, from Toolkit.streamView
     range: "90",
     view: "trends",
@@ -578,6 +578,7 @@
         to: state.range === "custom" ? state.custom.to : null,
         people: state.view === "people" ? state.people.mode : null,
         idle: state.view === "inactive" ? state.idle.days : null,
+        list: state.view === "inactive" && state.idle.list === "streams" ? "streams" : null,
       },
       push
     );
@@ -595,6 +596,7 @@
       custom: { from: DAY_TEXT.test(params.get("from")) ? params.get("from") : "", to: DAY_TEXT.test(params.get("to")) ? params.get("to") : "" },
       people: params.get("people") === "where" ? "where" : params.get("people") === "activity" ? "activity" : null,
       idle: ["90", "182", "365", "730"].includes(params.get("idle")) ? params.get("idle") : null,
+      list: params.get("list") === "streams" ? "streams" : "branches",
     };
   }
 
@@ -641,6 +643,7 @@
     if (wanted.view) state.view = wanted.view;
     if (wanted.people) state.people.mode = wanted.people;
     if (wanted.idle) state.idle.days = wanted.idle;
+    if (wanted.view === "inactive") state.idle.list = wanted.list;
     const rangeChanged =
       wanted.range && (wanted.range !== state.range || (wanted.range === "custom" && (wanted.custom.from !== state.custom.from || wanted.custom.to !== state.custom.to)));
     if (wanted.range) showRange(wanted.range, wanted.custom);
@@ -2180,27 +2183,40 @@
       if (state.view === "inactive") render();
     }
 
-    /** The branches under a path: its streams, plus the top folders of local depots (or its own folders). */
-    async function list(root) {
+    /** Virtual and sparse streams can be in use without submits of their own, so they're never called inactive. */
+    const special = (b) => b.kind === "virtual" || /^sparse/.test(b.kind);
+
+    /**
+     * What to list under a path.
+     * Branches: depot paths. At the top, every depot with the folders just inside it; elsewhere, this path and its folders.
+     * Streams: the stream specs under the path.
+     */
+    async function list(root, mode) {
       const found = new Map();
-      const add = (path, kind, parent) => {
-        if (path && !found.has(path.toLowerCase())) found.set(path.toLowerCase(), { path, kind, parent, last: undefined, files: null, size: null });
+      const add = (row) => {
+        const key = String(row.path).toLowerCase();
+        if (row.path && !found.has(key)) found.set(key, { last: undefined, files: null, size: null, group: "", head: false, ...row });
       };
-      const streams = await Toolkit.tryRun(["streams", ...(root === "//" ? [] : [`${root}/...`])]);
-      for (const row of streams.data) add(field(row, "Stream"), (field(row, "Type") || "stream").toLowerCase(), field(row, "Parent"));
-      let folders = [];
+      if (mode === "streams") {
+        const streams = await Toolkit.tryRun(["streams", ...(root === "//" ? [] : [`${root}/...`])]);
+        for (const row of streams.data) add({ path: field(row, "Stream"), kind: (field(row, "Type") || "stream").toLowerCase() });
+        return [...found.values()];
+      }
+      let heads;
       if (root === "//") {
         const depots = await Toolkit.tryRun(["depots"]);
-        folders = Toolkit.depotsFrom(depots.data)
-          .filter((d) => d.hint === "local")
-          .map((d) => d.path);
-      } else if (!found.size) {
-        folders = [root];
+        heads = Toolkit.depotsFrom(depots.data).map((d) => ({ path: d.path, kind: `${d.hint} depot` }));
+      } else {
+        heads = [{ path: root, kind: "folder" }];
       }
-      for (let i = 0; i < folders.length; i += 100) {
-        const chunk = folders.slice(i, i + 100);
-        const result = await Toolkit.tryRun(["dirs", ...chunk.map((p) => `${p}/*`)]);
-        for (const row of result.data) add(field(row, "dir"), "folder", "");
+      for (const h of heads) add({ ...h, group: h.path.toLowerCase(), head: true });
+      for (let i = 0; i < heads.length; i += 100) {
+        const chunk = heads.slice(i, i + 100);
+        const result = await Toolkit.tryRun(["dirs", ...chunk.map((h) => `${h.path}/*`)]);
+        for (const row of result.data) {
+          const dir = field(row, "dir");
+          if (dir) add({ path: dir, kind: "folder", group: String(parentOf(dir)).toLowerCase() });
+        }
       }
       return [...found.values()];
     }
@@ -2301,7 +2317,7 @@
     async function load(path) {
       const myToken = token;
       try {
-        const found = await list(path);
+        const found = await list(path, state.idle.list);
         if (myToken !== token) return;
         branches = found;
         draw();
@@ -2324,11 +2340,11 @@
     }
 
     function render() {
-      const path = shownPath();
-      if (scope !== path) {
+      const key = `${shownPath()}|${state.idle.list}`;
+      if (scope !== key) {
         reset();
-        scope = path;
-        load(path);
+        scope = key;
+        load(shownPath());
       } else if (branches) {
         resolve(token); // the history may have grown since
       }
@@ -2339,12 +2355,33 @@
       if (state.view !== "inactive") return;
       const span = IDLE_SPANS.find(([key]) => key === state.idle.days) || IDLE_SPANS[1];
       const cutoff = Date.now() / 1000 - Number(span[0]) * DAY;
-      const isIdle = (b) => b.kind !== "virtual" && (b.last === null || (b.last && b.last.t < cutoff));
-      const where = scope === "//" ? "in all depots" : `under ${scope}`;
+      const isIdle = (b) => !special(b) && (b.last === null || (b.last && b.last.t < cutoff));
+      const path = shownPath();
+      const where = path === "//" ? "in all depots" : `under ${path}`;
+      const streams = state.idle.list === "streams";
 
       const toolbar = el(
         "div",
         { className: "ac-toolbar" },
+        el(
+          "span",
+          { className: "ac-toolbar-group" },
+          "List",
+          segment(
+            [
+              ["branches", "Depots and branches"],
+              ["streams", "Streams"],
+            ],
+            state.idle.list,
+            (value) => {
+              syncUrl(false);
+              state.idle.list = value;
+              store.set("idleList", value);
+              syncUrl(true);
+              render();
+            }
+          )
+        ),
         el(
           "span",
           { className: "ac-toolbar-group" },
@@ -2375,30 +2412,14 @@
 
       const old = ui.view.querySelector(".ac-idle-wrap");
       const scrollTop = old ? old.scrollTop : 0;
+      const noun = streams ? "streams" : "depots or folders";
       let body;
-      if (error) body = emptyView("Couldn't list the branches", error);
-      else if (!branches) body = emptyView("Finding branches…", `Reading the streams and folders ${where}.`);
-      else if (!branches.length) body = emptyView("No branches here", `No streams or folders were found ${where}.`);
+      if (error) body = emptyView("Couldn't list them", error);
+      else if (!branches) body = emptyView(streams ? "Finding streams…" : "Finding depots and branches…", "");
+      else if (!branches.length) body = emptyView(`No ${noun} here`, `None were found ${where}.`);
       else body = table(isIdle);
 
-      let summary = null;
-      if (branches && branches.length) {
-        const real = branches.filter((b) => b.kind !== "virtual");
-        const idleOnes = real.filter(isIdle);
-        const checking = real.filter((b) => b.last === undefined).length;
-        const files = d3.sum(idleOnes, (b) => b.files || 0);
-        const size = d3.sum(idleOnes, (b) => b.size || 0);
-        summary = el(
-          "p",
-          { className: "ac-idle-summary" },
-          el("strong", {}, `${fmt(idleOnes.length)} of ${fmt(real.length)}`),
-          ` branches ${where} have had nothing submitted for ${span[1]}`,
-          idleOnes.length && size ? `, holding ${fmt(files)} files (${bytes(size)})` : "",
-          ".",
-          checking ? el("span", { className: "tk-muted" }, ` Checking ${fmt(checking)} more…`) : null
-        );
-      }
-
+      const summary = branches && branches.length ? summarize(isIdle, span, where) : null;
       const pane = el(
         "div",
         { className: "ac-pane ac-idle" },
@@ -2408,7 +2429,7 @@
           ? el(
               "p",
               { className: "ac-panel-note" },
-              "Candidates to review before archiving, oldest first. Check with the people who worked there before removing anything. Click a branch to see its activity."
+              "Candidates to review before archiving, oldest first. Check with the people who worked there before removing anything. Click a name to see its activity."
             )
           : null,
         body
@@ -2418,36 +2439,88 @@
       if (wrap) wrap.scrollTop = scrollTop;
     }
 
+    function summarize(isIdle, span, where) {
+      const streams = state.idle.list === "streams";
+      const counted = branches.filter((b) => !special(b));
+      const checking = counted.filter((b) => b.last === undefined).length;
+      // Sizes: an idle depot covers its branches, so only add branches whose depot isn't idle (no double counting).
+      const idleHeads = new Set(branches.filter((b) => b.head && isIdle(b)).map((b) => b.group));
+      const sized = streams ? counted.filter(isIdle) : branches.filter((b) => isIdle(b) && (b.head || !idleHeads.has(b.group)));
+      const files = d3.sum(sized, (b) => b.files || 0);
+      const size = d3.sum(sized, (b) => b.size || 0);
+      const parts = [];
+      if (streams) {
+        const idleOnes = counted.filter(isIdle);
+        const empty = idleOnes.filter((b) => b.last === null).length;
+        parts.push(el("strong", {}, `${fmt(idleOnes.length)} of ${fmt(counted.length)}`), ` streams ${where} have had nothing submitted for ${span[1]}`);
+        if (empty) parts.push(`, ${fmt(empty)} of them never`);
+      } else {
+        const heads = branches.filter((b) => b.head);
+        const folders = branches.filter((b) => !b.head);
+        if (shownPath() === "//") {
+          parts.push(
+            el("strong", {}, `${fmt(heads.filter(isIdle).length)} of ${fmt(heads.length)}`),
+            " depots and ",
+            el("strong", {}, `${fmt(folders.filter(isIdle).length)} of ${fmt(folders.length)}`),
+            ` branches have had nothing submitted for ${span[1]}`
+          );
+        } else {
+          parts.push(el("strong", {}, `${fmt(folders.filter(isIdle).length)} of ${fmt(folders.length)}`), ` folders ${where} have had nothing submitted for ${span[1]}`);
+        }
+      }
+      if (size) parts.push(`, holding ${fmt(files)} files (${bytes(size)})`);
+      parts.push(".");
+      if (streams && branches.some(special)) parts.push(el("span", { className: "tk-muted" }, " Virtual and sparse streams aren't counted: they can be in use without submits of their own."));
+      if (checking) parts.push(el("span", { className: "tk-muted" }, ` Checking ${fmt(checking)} more…`));
+      return el("p", { className: "ac-idle-summary" }, ...parts);
+    }
+
+    const order = (b) => (b.kind === "virtual" ? 4e9 : special(b) && b.last === null ? 3e9 : b.last === undefined ? 2e9 : b.last === null ? -1 : b.last.t);
+    const byOrder = (a, b) => order(a) - order(b) || a.path.localeCompare(b.path);
+
+    function row(b, isIdle, counts) {
+      const key = keyOf(b.path);
+      const count = key !== null && b.kind !== "virtual" ? counts.get(key) || 0 : null;
+      let last;
+      if (b.kind === "virtual") last = el("td", { className: "tk-muted" }, "Virtual: shows its parent's files");
+      else if (b.last === undefined) last = el("td", { className: "tk-muted" }, "Checking…");
+      else if (b.last === null && special(b)) last = el("td", { className: "tk-muted" }, "Sparse: nothing of its own submitted yet");
+      else if (b.last === null) last = el("td", {}, el("strong", {}, "Empty: nothing ever submitted"));
+      else last = el("td", { title: b.last.d || "" }, fmtShort(dateOf(b.last.t)), el("small", {}, `${ago(b.last.t)} · change ${b.last.c}`));
+      const kinds = { sparsedev: "sparse development", sparserel: "sparse release" };
+      const kind = b.kind === "folder" ? (b.head ? "folder" : "branch") : /depot$/.test(b.kind) ? b.kind : `${kinds[b.kind] || b.kind} stream`;
+      return el(
+        "tr",
+        { className: [isIdle(b) ? "is-idle" : "", b.head ? "is-head" : "", b.group && !b.head ? "is-child" : ""].filter(Boolean).join(" ") },
+        el(
+          "td",
+          {},
+          el("button", { type: "button", className: "ac-idle-name", title: `Show activity in ${b.path}`, onclick: () => openBranch(b.path) }, b.path),
+          el("small", {}, kind, isIdle(b) ? el("span", { className: "ac-idle-badge" }, b.last === null ? "Empty" : "Inactive") : null)
+        ),
+        last,
+        el("td", {}, b.last ? state.names.get(b.last.u) || b.last.u : ""),
+        el("td", { className: "num" }, count === null ? "" : fmt(count)),
+        el("td", { className: "num" }, b.files === null ? (b.kind === "virtual" ? "" : "…") : fmt(b.files)),
+        el("td", { className: "num" }, b.size === null ? "" : bytes(b.size))
+      );
+    }
+
     function table(isIdle) {
       const { counts } = historyIndex();
-      const order = (b) => (b.kind === "virtual" ? 3e9 : b.last === undefined ? 2e9 : b.last === null ? -1 : b.last.t);
-      const shown = branches
-        .filter((b) => !state.idle.only || isIdle(b))
-        .sort((a, b) => order(a) - order(b) || a.path.localeCompare(b.path));
-      const rows = shown.map((b) => {
-        const key = keyOf(b.path);
-        const count = key !== null && b.kind !== "virtual" ? counts.get(key) || 0 : null;
-        let last;
-        if (b.kind === "virtual") last = el("td", { className: "tk-muted" }, "Virtual: shows its parent's files");
-        else if (b.last === undefined) last = el("td", { className: "tk-muted" }, "Checking…");
-        else if (b.last === null) last = el("td", {}, el("strong", {}, "Never"));
-        else last = el("td", { title: b.last.d || "" }, fmtShort(dateOf(b.last.t)), el("small", {}, `${ago(b.last.t)} · change ${b.last.c}`));
-        return el(
-          "tr",
-          { className: isIdle(b) ? "is-idle" : "" },
-          el(
-            "td",
-            {},
-            el("button", { type: "button", className: "ac-idle-name", title: `Show activity in ${b.path}`, onclick: () => openBranch(b.path) }, b.path),
-            el("small", {}, b.kind === "folder" ? "folder" : `${b.kind} stream`, isIdle(b) ? el("span", { className: "ac-idle-badge" }, "Inactive") : null)
-          ),
-          last,
-          el("td", {}, b.last ? state.names.get(b.last.u) || b.last.u : ""),
-          el("td", { className: "num" }, count === null ? "" : fmt(count)),
-          el("td", { className: "num" }, b.files === null ? (b.kind === "virtual" ? "" : "…") : fmt(b.files)),
-          el("td", { className: "num" }, b.size === null ? "" : bytes(b.size))
-        );
-      });
+      const shows = (b) => !state.idle.only || isIdle(b);
+      let rows = [];
+      if (state.idle.list === "streams") {
+        rows = branches.filter(shows).sort(byOrder).map((b) => row(b, isIdle, counts));
+      } else {
+        // Each depot (or the path itself), followed by the branches inside it.
+        const children = d3.group(branches.filter((b) => !b.head), (b) => b.group);
+        for (const head of branches.filter((b) => b.head).sort(byOrder)) {
+          const kids = (children.get(head.group) || []).filter(shows).sort(byOrder);
+          if (!shows(head) && !kids.length) continue;
+          rows.push(row(head, isIdle, counts), ...kids.map((b) => row(b, isIdle, counts)));
+        }
+      }
       return el(
         "div",
         { className: "ac-idle-wrap" },
@@ -2460,10 +2533,10 @@
             el(
               "tr",
               {},
-              el("th", {}, "Branch"),
+              el("th", {}, state.idle.list === "streams" ? "Stream" : "Depot or branch"),
               el("th", {}, "Last submit"),
               el("th", {}, "By"),
-              el("th", { className: "num", title: "From the saved history, for branches one or two folders down" }, `Changelists, ${rangeLabel()}`),
+              el("th", { className: "num", title: "From the saved history, for paths one or two folders down" }, `Changelists, ${rangeLabel()}`),
               el("th", { className: "num" }, "Files"),
               el("th", { className: "num" }, "Size")
             )
@@ -2720,6 +2793,7 @@
     state.people.mode = store.get("peopleMode", "activity") === "where" ? "where" : "activity";
     state.idle.days = String(store.get("idleDays", "182"));
     state.idle.only = !!store.get("idleOnly", false);
+    state.idle.list = store.get("idleList", "branches") === "streams" ? "streams" : "branches";
     state.includeMerges = store.get("includeMerges", true) !== false;
     picker = Toolkit.pathPicker({ input: ui.path, form: ui.form, recent: () => store.get("recent", []) });
 
@@ -2819,6 +2893,7 @@
     if (wanted.view) state.view = wanted.view;
     if (wanted.people) state.people.mode = wanted.people;
     if (wanted.idle) state.idle.days = wanted.idle;
+    if (wanted.view === "inactive") state.idle.list = wanted.list;
     if (wanted.range) showRange(wanted.range, wanted.custom);
     if (wanted.path) {
       ui.path.value = wanted.path;
