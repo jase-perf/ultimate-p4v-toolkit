@@ -22,7 +22,7 @@ Tools that need elevated access check the current user's access level when they 
 
 ## Install
 
-Download the definition files and import them. Turn on HTML Tools first, in *Edit > Preferences > HTML Tools*.
+Download the definition files and import them. Modern P4V has HTML Tools on by default. If *Preferences > HTML Tools* limits the permitted base URLs, add `https://jase.town`.
 
 | File | What's in it | Import it in |
 |---|---|---|

@@ -455,7 +455,7 @@
       /* ===== install steps ===== */
       .steps {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 20px;
         counter-reset: step;
       }
@@ -815,22 +815,6 @@
             <div class="card-bar"></div>
             <div class="card-body">
               <div class="step-num">Step 1</div>
-              <h3>Turn on HTML Tools</h3>
-              <p>
-                In P4V, open
-                <span class="menu-path">Edit &gt; Preferences</span> (on macOS,
-                <span class="menu-path">P4V &gt; Preferences</span>), go to the
-                <span class="menu-path">HTML Tools</span> page, and switch
-                HTML Tools on.
-              </p>
-              <p>P4Admin has the same setting.</p>
-            </div>
-          </div>
-
-          <div class="card step">
-            <div class="card-bar"></div>
-            <div class="card-body">
-              <div class="step-num">Step 2</div>
               <h3>Download the tools</h3>
               <div class="downloads">
                 <a class="dl primary" href="xml/tabs.xml" download>
@@ -861,7 +845,7 @@
           <div class="card step">
             <div class="card-bar"></div>
             <div class="card-body">
-              <div class="step-num">Step 3</div>
+              <div class="step-num">Step 2</div>
               <h3>Import them</h3>
               <p>
                 Go to <span class="menu-path">Tools &gt; Manage Tools</span>,
@@ -873,6 +857,12 @@
                 Open the new tabs from the <span class="menu-path">View</span>
                 menu. Right-click tools appear when you right-click files and
                 folders.
+              </p>
+              <p>
+                If a tool won't load, check the permitted base URLs in
+                <span class="menu-path">Preferences &gt; HTML Tools</span>. If
+                that list is limited, <code>https://jase.town</code> needs to be
+                on it.
               </p>
             </div>
           </div>
