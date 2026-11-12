@@ -344,6 +344,47 @@ body.dark-theme .tk-app.ac-app {
   padding: 0 0.2rem;
 }
 
+/* A filter is on: make it impossible to miss. */
+.ac-filters {
+  align-items: center;
+}
+
+.ac-filters .ac-check {
+  margin-right: 0.6rem;
+}
+
+.ac-filter-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--tk-accent);
+}
+
+.ac-filters.is-filtered .ac-chip {
+  background: var(--tk-accent);
+  color: #fff;
+  font-weight: 600;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.ac-filters.is-filtered .ac-chip .ac-dot {
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.ac-filters.is-filtered .ac-chip button {
+  color: #fff;
+}
+
+.ac-filter-clear {
+  border: 0;
+  background: transparent;
+  color: var(--tk-accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* ---------- Cards ---------- */
 
 .ac-cards {
@@ -962,14 +1003,35 @@ body.dark-theme .ac-card-trend.is-down {
   flex: 1;
   min-height: 0;
   display: flex;
-  gap: 0.7rem;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
-.ac-people-list {
-  width: 26rem;
-  flex: none;
+.ac-people-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Activity: every person's card, side by side. */
+.ac-people-grid {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+  align-content: start;
+  gap: 0.6rem;
   padding-right: 4px;
+}
+
+.ac-people-grid .ac-person {
+  margin-bottom: 0;
+  padding: 0.7rem 0.8rem;
+}
+
+.ac-people-grid .ac-person-spark svg {
+  height: 56px;
 }
 
 .ac-person {
@@ -1067,18 +1129,18 @@ body.dark-theme .ac-card-trend.is-down {
 
 .ac-matrix-wrap {
   flex: 1;
+  min-height: 0;
   min-width: 0;
-  overflow: auto;
+  overflow: auto; /* scrolls both ways; names and folder headings stay put */
   border: 1px solid var(--ac-panel-border);
   border-radius: 10px;
   background: var(--ac-chart-bg);
-  padding: 0.5rem;
 }
 
 .ac-matrix {
   border-collapse: separate;
-  border-spacing: 3px;
-  font-size: 0.78rem;
+  border-spacing: 4px;
+  font-size: 0.92rem;
 }
 
 .ac-matrix th {
@@ -1088,19 +1150,36 @@ body.dark-theme .ac-card-trend.is-down {
 }
 
 .ac-matrix thead th {
-  height: 7rem;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 10rem;
   vertical-align: bottom;
-  padding: 0 0 0.3rem;
+  padding: 0.5rem 0 0.4rem;
+  background: var(--ac-chart-bg) !important;
 }
 
 .ac-matrix thead th div {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  max-height: 7rem;
+  max-height: 9.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
   margin: 0 auto;
   cursor: pointer;
+}
+
+.ac-matrix thead th:first-child {
+  left: 0;
+  z-index: 3;
+}
+
+.ac-matrix tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  padding-left: 0.6rem !important;
+  background: var(--ac-chart-bg) !important;
 }
 
 .ac-matrix thead th div:hover,
@@ -1115,13 +1194,13 @@ body.dark-theme .ac-card-trend.is-down {
 }
 
 .ac-matrix td {
-  width: 34px;
-  min-width: 34px;
-  height: 26px;
-  border-radius: 4px;
+  width: 46px;
+  min-width: 46px;
+  height: 34px;
+  border-radius: 5px;
   text-align: center;
   font-variant-numeric: tabular-nums;
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   cursor: pointer;
 }
 
@@ -1209,12 +1288,10 @@ body.dark-theme .ac-tooltip {
 }
 
 @media (max-width: 900px) {
-  .ac-view,
-  .ac-people {
+  .ac-view {
     flex-direction: column;
   }
-  .ac-side,
-  .ac-people-list {
+  .ac-side {
     width: auto;
     max-height: 40%;
   }

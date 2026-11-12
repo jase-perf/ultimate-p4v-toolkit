@@ -76,6 +76,7 @@
     trends: { metric: "changes", split: "none", interval: "auto", smooth: true, style: "lines", hidden: new Set(), zoom: null, animate: true },
     includeMerges: true,
     calendar: { metric: "changes", selected: null },
+    people: { mode: "activity" },
     names: new Map(),
     colors: new Map(),
     folderColors: new Map(),
@@ -141,6 +142,18 @@
   const timeOf = (row) => Toolkit.changeTime(row, state.serverOffset);
   const goodTime = (t) => Number.isFinite(t) && t > 0;
   const descOf = (row) => Toolkit.changeDesc(row).split(/\r?\n/)[0].slice(0, 160);
+
+  /**
+   * The depots that hold files, from `p4 depots`. P4V names the field "Depot"
+   * rather than the server's "name", so read either; skip any without a name.
+   */
+  function depotRows(rows) {
+    return rows
+      .filter((row) => /^(local|stream|tangent)$/i.test(field(row, "type")))
+      .map((row) => ({ name: field(row, "name") || field(row, "Depot"), hint: field(row, "type").toLowerCase() }))
+      .filter((d) => d.name)
+      .map((d) => ({ path: `//${d.name}`, hint: d.hint }));
+  }
 
   const wild = (path) => (path === "//" ? "//..." : `${path}/...`);
   const childPath = (key) => (state.root === "//" ? `//${key}` : `${state.root}/${key}`);
@@ -607,7 +620,18 @@
         )
       );
     }
+    if (state.filter.user || state.filter.folder !== null) {
+      chips.splice(
+        1,
+        0,
+        el("span", { className: "ac-filter-label" }, "Showing only")
+      );
+      chips.push(
+        el("button", { type: "button", className: "ac-filter-clear", onclick: () => setFilter({ user: null, folder: null }) }, "Clear")
+      );
+    }
     ui.filters.replaceChildren(...chips);
+    ui.filters.classList.toggle("is-filtered", Boolean(state.filter.user || state.filter.folder !== null));
   }
 
   function setFilter(change) {
@@ -1022,7 +1046,7 @@
       .append("g")
       .attr("class", "ac-axis")
       .attr("transform", `translate(${m.left},0)`)
-      .call(d3.axisLeft(y).ticks(5).tickFormat(t.metric === "ratio" ? d3.format(".1f") : d3.format("~s")));
+      .call(d3.axisLeft(y).ticks(5).tickFormat(t.metric === "ratio" ? d3.format(".1f") : (v) => (Math.abs(v) >= 1000 ? d3.format("~s")(v) : d3.format("~g")(v))));
 
     const plot = svg.append("g").attr("clip-path", `url(#${clipId})`);
     const range = d3.range(data.keys.length);
@@ -1537,7 +1561,7 @@
       const found = new Map(todo.map((p) => [p, []]));
       if (found.has("//")) {
         const result = await Toolkit.tryRun(["depots"]);
-        found.set("//", result.data.filter((row) => /^(local|stream|tangent)$/i.test(field(row, "type"))).map((row) => `//${field(row, "name")}`));
+        found.set("//", depotRows(result.data).map((d) => d.path));
       }
       const folders = todo.filter((p) => p !== "//");
       for (let i = 0; i < folders.length; i += 100) {
@@ -2024,14 +2048,29 @@
       )
     );
 
+    const mode = state.people.mode;
+    const switcher = el(
+      "div",
+      { className: "ac-people-bar" },
+      segment([["activity", "Activity"], ["where", "Who works where"]], mode, (v) => {
+        state.people.mode = v;
+        store.set("peopleMode", v);
+        renderPeople();
+      })
+    );
+    if (mode === "activity") {
+      ui.view.replaceChildren(el("div", { className: "ac-people is-activity" }, switcher, el("div", { className: "ac-people-grid" }, ...cards)));
+      return;
+    }
+
     // Who works where: people down the side, folders across the top.
-    const topPeople = list.slice(0, 18);
+    const topPeople = list.slice(0, 60);
     // Few top-level folders (say, four streams)? Go one level down so the grid says more.
     const deep = folderTotals.size < 6 && subTotals.size > folderTotals.size;
     const totals = deep ? subTotals : folderTotals;
     const valueOf = (p, f) => (deep ? p.sub.get(f) : p.folders.get(f)) || 0;
     const topLevel = (f) => (deep ? f.split("/")[0] : f);
-    const topFolders = [...totals].sort((a, b) => b[1] - a[1]).slice(0, 16).map(([f]) => f);
+    const topFolders = [...totals].sort((a, b) => b[1] - a[1]).slice(0, 60).map(([f]) => f);
     let max = 0;
     for (const p of topPeople) for (const f of topFolders) max = Math.max(max, valueOf(p, f));
     const accent = d3.color(getComputedStyle(document.querySelector(".ac-app")).getPropertyValue("--tk-accent").trim() || "#4f8cff");
@@ -2090,14 +2129,10 @@
     ui.view.replaceChildren(
       el(
         "div",
-        { className: "ac-people" },
-        el("div", { className: "ac-people-list" }, ...cards),
-        el(
-          "div",
-          { className: "ac-matrix-wrap" },
-          el("div", { className: "ac-panel-note" }, "Files changed by each person in each folder. Click a square to see it over time."),
-          matrix
-        )
+        { className: "ac-people is-where" },
+        switcher,
+        el("div", { className: "ac-panel-note" }, "Files changed by each person in each folder. Click a name to filter to it, or a square to see that person in that folder over time."),
+        el("div", { className: "ac-matrix-wrap" }, matrix)
       )
     );
   }
@@ -2165,10 +2200,7 @@
 
     async loadDepots() {
       const result = await Toolkit.tryRun(["depots"]);
-      picker.depots = result.data
-        .filter((row) => /^(local|stream|tangent)$/i.test(field(row, "type")))
-        .map((row) => ({ path: `//${field(row, "name")}`, hint: field(row, "type").toLowerCase() }))
-        .sort((a, b) => a.path.localeCompare(b.path, undefined, { sensitivity: "base" }));
+      picker.depots = depotRows(result.data).sort((a, b) => a.path.localeCompare(b.path, undefined, { sensitivity: "base" }));
       if (picker.isOpen()) picker.render();
     },
 
@@ -2319,6 +2351,7 @@
     const saved = store.get("trends", null);
     if (saved) Object.assign(state.trends, saved);
     state.calendar.metric = store.get("calendarMetric", "changes");
+    state.people.mode = store.get("peopleMode", "activity") === "where" ? "where" : "activity";
     state.includeMerges = store.get("includeMerges", true) !== false;
     picker.wire();
 
