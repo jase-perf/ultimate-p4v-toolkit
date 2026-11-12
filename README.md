@@ -18,6 +18,10 @@ Work in progress.
 | [Typemap Editor](site/tools/typemap/) | HTML Tab | none | Admins and super users |
 | [AI Help](site/tools/ai-help/) | HTML Tab | none | Everyone |
 
+## Where your data goes
+
+The tools are served from GitHub Pages, but that only delivers the HTML and JavaScript. Once open, a tool reads from your P4 Server through P4V with your login, and does all its processing on your computer. No server data is sent anywhere else, and Server Activity's saved history stays local. The two exceptions are deliberate: AI Help sends your question to Perforce's AI support service, and the Typemap Editor downloads its templates from GitHub (it sends nothing).
+
 Tools that need elevated access check the current user's access level when they open. Users without it get a clear explanation instead of a raw permission error.
 
 ## Install
