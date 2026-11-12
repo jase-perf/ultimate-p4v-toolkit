@@ -482,6 +482,56 @@ const Toolkit = (() => {
       .sort((a, b) => a.path.localeCompare(b.path, undefined, { sensitivity: "base" }));
   }
 
+  let streamsPromise = null;
+
+  /**
+   * Every stream on the server (fetched once per page).
+   * @returns {Promise<{ path: string, type: string, parent: string }[]>}
+   */
+  function streamList() {
+    if (!streamsPromise) {
+      streamsPromise = (inP4V() ? tryRun(["streams"]) : Promise.resolve({ data: [] })).then((result) =>
+        result.data
+          .map((row) => ({ path: field(row, "Stream"), type: field(row, "Type").toLowerCase(), parent: field(row, "Parent") }))
+          .filter((s) => s.path)
+          .sort((a, b) => a.path.localeCompare(b.path, undefined, { sensitivity: "base" }))
+      );
+    }
+    return streamsPromise;
+  }
+
+  /** The depot path at the start of a view line: `"-//a b/..." x` -> { path: "//a b/...", exclude: true }. */
+  function viewLeft(line) {
+    const match = String(line).trim().match(/^(?:"([^"]*)"|(\S+))/);
+    let path = match ? match[1] ?? match[2] : "";
+    const exclude = path.startsWith("-");
+    if (exclude || path.startsWith("+")) path = path.slice(1);
+    return { path, exclude };
+  }
+
+  /**
+   * A stream's full view (inherited paths, imports, components, exclusions), from `p4 stream -o -v`.
+   * Read-only: prints the spec, never saves it.
+   * @returns {Promise<{ stream: string, type: string, include: string[], exclude: string[] } | null>} null if not a stream
+   */
+  async function streamView(path) {
+    const streams = await streamList();
+    const known = streams.find((s) => s.path.toLowerCase() === String(path).toLowerCase());
+    if (!known) return null;
+    const result = await tryRun(["stream", "-o", "-v", known.path]);
+    const spec = result.data[0];
+    if (!spec || !field(spec, "Stream")) return null;
+    const include = [];
+    const exclude = [];
+    for (let i = 0; ; i++) {
+      const line = field(spec, `View${i}`);
+      if (!line) break;
+      const left = viewLeft(line);
+      if (left.path) (left.exclude ? exclude : include).push(left.path);
+    }
+    return { stream: known.path, type: known.type, include, exclude };
+  }
+
   const TOGGLE_SVG = '<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path fill="currentColor" d="M2 4h8L6 8.5z"/></svg>';
 
   /**
@@ -510,6 +560,7 @@ const Toolkit = (() => {
     box.append(toggle, menu);
 
     let depots = [];
+    let streams = [];
     let filtering = false; // true once the user types; the arrow shows everything
     let active = -1;
     let options = [];
@@ -524,6 +575,7 @@ const Toolkit = (() => {
       return [
         ["Recent", recents.filter(match)],
         ["Depots", [...all, ...depots.map((d) => ({ path: withSuffix(d.path), shown: d.path, hint: d.hint }))].filter(match)],
+        ["Streams", streams.map((s) => ({ path: withSuffix(s.path), shown: s.path, hint: `${s.type} stream` })).filter(match)],
       ].filter(([, items]) => items.length);
     }
 
@@ -588,6 +640,7 @@ const Toolkit = (() => {
       if (!inP4V()) return;
       const result = await tryRun(["depots"]);
       depots = depotsFrom(result.data);
+      streams = await streamList();
       if (isOpen()) render();
     }
 
@@ -692,6 +745,8 @@ const Toolkit = (() => {
     formatTime,
     plural,
     depotsFrom,
+    streamList,
+    streamView,
     pathPicker,
     urlState,
   };

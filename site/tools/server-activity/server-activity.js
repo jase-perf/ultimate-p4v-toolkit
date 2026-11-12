@@ -63,6 +63,7 @@
     server: "",
     custom: { from: "", to: "" }, // "YYYY-MM-DD" days, when range is "custom"
     idle: { days: "182", only: false }, // the Inactive view: how long counts as inactive
+    stream: null, // when the path is a stream: its full view { include, exclude }, from Toolkit.streamView
     range: "90",
     view: "trends",
     records: new Map(), // change number -> summary
@@ -209,7 +210,7 @@
     for (const row of rows) {
       const record = records.get(Number(field(row, "change")));
       if (!record) continue;
-      const parts = relParts(field(row, "depotFile"));
+      const parts = relParts(field(row, "streamFile") || field(row, "depotFile"));
       if (!parts) continue;
       const ai = actionIndex(field(row, "action"));
       record.n += scale;
@@ -231,7 +232,9 @@
     if (token !== state.token) return;
     const lo = numbers[0];
     const hi = numbers[numbers.length - 1];
-    const result = await politeRun(["files", "-a", "-m", String(FILE_PAGE), `${wild(state.root)}@${lo},@${hi}`]);
+    // --streamviews reads a stream through its full view and reports each file at its path in the stream.
+    const views = state.stream ? ["--streamviews"] : [];
+    const result = await politeRun(["files", "-a", "-m", String(FILE_PAGE), ...views, `${wild(state.root)}@${lo},@${hi}`]);
     const distinct = new Set(result.data.map((row) => field(row, "depotFile"))).size;
     if (distinct >= FILE_PAGE) {
       if (numbers.length > 1) {
@@ -241,7 +244,8 @@
         return;
       }
       // One enormous changelist: count it exactly, and take the action mix from the sample.
-      const total = await politeRun(["sizes", "-s", `${wild(state.root)}@=${lo}`]);
+      // (`sizes` can't read a stream's view, so a stream keeps the sample's count.)
+      const total = state.stream ? { data: [] } : await politeRun(["sizes", "-s", `${wild(state.root)}@=${lo}`]);
       const n = Number(field(total.data[0], "fileCount")) || result.data.length;
       addRevisions(result.data, records, n / Math.max(1, result.data.length));
       records.get(lo).approx = true;
@@ -292,8 +296,10 @@
         state.paused = true;
         return "paused";
       }
-      const spec = `${wild(state.root)}@${lo},@${upper === null ? "now" : upper}`;
-      const result = await politeRun(["changes", "-s", "submitted", "-L", "-m", String(PAGE), spec]);
+      const range = `@${lo},@${upper === null ? "now" : upper}`;
+      // A stream's view can span several depot paths; `changes` returns up to PAGE for each, so keep the newest PAGE overall.
+      const specs = state.stream ? state.stream.include.map((p) => `${p}${range}`) : [`${wild(state.root)}${range}`];
+      const result = await politeRun(["changes", "-s", "submitted", "-L", "-m", String(PAGE), ...specs]);
       if (token !== state.token) return "stale";
       if (!result.ok && !result.data.length && !/no such|not in|no file/i.test(result.error)) throw new Error(result.error);
 
@@ -313,8 +319,9 @@
           w: field(row, "client"),
           d: descOf(row),
         }))
-        .filter((ch) => ch.c)
-        .sort((a, b) => b.c - a.c);
+        .filter((ch, i, list) => ch.c && list.findIndex((other) => other.c === ch.c) === i)
+        .sort((a, b) => b.c - a.c)
+        .slice(0, PAGE);
 
       if (!changes.length) {
         if (upper !== null) addRange(lo, upper, Infinity);
@@ -323,8 +330,10 @@
         return "exhausted";
       }
 
-      const records = await summarize(changes, token);
+      let records = await summarize(changes, token);
       if (token !== state.token) return "stale";
+      // In a stream, a changelist that only touched excluded files isn't part of it.
+      if (state.stream) records = records.filter((r) => r.n > 0);
       await ActivityStore.putChanges(records);
       records.forEach((r) => state.records.set(r.c, r));
 
@@ -459,6 +468,16 @@
     fresh.reset();
     idle.reset();
     hideNotice();
+    // A stream is read through its full view (imports, exclusions, components), and saved apart from the plain path.
+    const myToken = state.token;
+    state.stream = null;
+    const view = await Toolkit.streamView(root).catch(() => null);
+    if (myToken !== state.token) return;
+    if (view && view.include.length) {
+      state.stream = view;
+      state.scope = `${state.server}|stream|${root}`;
+      state.meta.scope = state.scope;
+    }
     let [meta, saved] = await Promise.all([ActivityStore.getMeta(state.scope), ActivityStore.getChanges(state.scope)]);
     // History saved by an older version may have unreadable times; start that path over.
     if ((saved || []).some((r) => !goodTime(r.t)) || (meta && meta.ranges.some((range) => !(range[2] > 0)))) {
@@ -674,7 +693,9 @@
       const where = state.persistent ? "Saved on this computer" : "Kept in memory (this P4V doesn't allow saving)";
       parts.push(el("span", { className: `ac-status-dot${state.persistent ? "" : " is-memory"}`, title: where }));
       if (count) {
-        const under = state.root === "//" ? "in all depots" : `under ${state.root}`;
+        const under = state.stream
+          ? `in the ${state.root} stream (its full view: ${Toolkit.plural(state.stream.include.length, "path")}${state.stream.exclude.length ? `, ${fmt(state.stream.exclude.length)} excluded` : ""})`
+          : state.root === "//" ? "in all depots" : `under ${state.root}`;
         let text;
         if (since === -Infinity) {
           const first = d3.min(state.records.values(), (r) => r.t);
