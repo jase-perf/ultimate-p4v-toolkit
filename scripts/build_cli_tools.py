@@ -38,6 +38,20 @@ TOOLS = {
             "Run tool in terminal window",
         ],
     },
+    "export-p4config": {
+        "name": "Export .p4config",
+        "description": (
+            "Writes a .p4config file with this workspace's server, user and workspace "
+            "name to the workspace root, so the p4 command line and other tools use the "
+            "right connection inside that folder. Never overwrites an existing file."
+        ),
+        # Several values: the workspace root ($r) can contain spaces, so it goes last.
+        "argument": "$p $c $u $r",
+        "where": "P4V, from the Tools menu (uses the current workspace)",
+        "options": [
+            "Run tool in terminal window",
+        ],
+    },
 }
 
 
@@ -55,6 +69,10 @@ def compact(source: str) -> str:
     return "\n".join(lines) + "\n"
 
 
+def multi(argument: str) -> bool:
+    return " " in argument
+
+
 def windows_arguments(source: str, argument: str) -> str:
     # Every piece is space-free, so P4V's splitting yields exactly these arguments;
     # PowerShell's -Command joins them back with spaces.
@@ -62,6 +80,11 @@ def windows_arguments(source: str, argument: str) -> str:
         "([scriptblock]::Create([Text.Encoding]::UTF8.GetString("
         f"[Convert]::FromBase64String('{b64(source)}'))))"
     )
+    if multi(argument):
+        # Several values, some possibly with spaces: put them after '#' so
+        # PowerShell ignores them as a comment; the script reads them from
+        # [Environment]::GetCommandLineArgs(), where each stays one value.
+        return f"-NoProfile -Command Invoke-Command -ScriptBlock {script} # {argument}"
     return f"-NoProfile -Command Invoke-Command -ScriptBlock {script} -ArgumentList {argument}"
 
 
@@ -69,15 +92,23 @@ def macos_arguments(source: str, tool: str, argument: str) -> str:
     # zsh doesn't word-split ${IFS} by default; -o shwordsplit lets it act as a space.
     # The leading ':;' (a no-op) keeps the first word from being an expansion.
     # '$$' is P4V's escape for a literal '$'.
-    command = (
-        f":;echo${{IFS}}{b64(source)}|base64${{IFS}}--decode|zsh${{IFS}}-s${{IFS}}--${{IFS}}$1"
-    ).replace("$", "$$")
+    if multi(argument):
+        # IFS=^ makes ${IFS} split the command into words while $@ splits
+        # only on '^', so a workspace root with spaces stays one argument.
+        command = (
+            f":;IFS=^;echo${{IFS}}{b64(source)}|base64${{IFS}}--decode|zsh${{IFS}}-s${{IFS}}--${{IFS}}$@"
+        ).replace("$", "$$")
+    else:
+        command = (
+            f":;echo${{IFS}}{b64(source)}|base64${{IFS}}--decode|zsh${{IFS}}-s${{IFS}}--${{IFS}}$1"
+        ).replace("$", "$$")
     return f"-o shwordsplit -lc {command} {tool} {argument}"
 
 
 def check(arguments: str, argument: str) -> None:
     pieces = arguments.split(" ")
-    stray = [p for p in pieces if '"' in p or ("%" in p and p != argument)]
+    macros = argument.split(" ")
+    stray = [p for p in pieces if '"' in p or ("%" in p and p not in macros)]
     if stray:
         raise SystemExit(f"argument pieces contain quotes or stray '%': {stray}")
 

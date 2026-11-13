@@ -7,6 +7,8 @@ ever means the operating system:
   p4v-tabs.xml                   P4V HTML Tabs (Manage Tools > HTML Tabs > Import)
   p4v-right-click-tools.xml      P4V HTML Windows (Manage Tools > HTML Windows > Import)
   p4admin-right-click-tools.xml  The same for P4Admin (offered on the tool's card)
+  p4v-custom-tools-pc.xml        P4V Custom Tools for Windows PCs
+  p4v-custom-tools-mac.xml       P4V Custom Tools for Macs
   p4admin-custom-tools-pc.xml    P4Admin Custom Tools for Windows PCs
   p4admin-custom-tools-mac.xml   P4Admin Custom Tools for Macs
                                  (Manage Tools > Custom Tools > Import)
@@ -57,7 +59,9 @@ WINDOWS = [
     ("Virtual Stream Utility", "Virtual Stream Utility", "tools/virtual-stream-utility/index.html", "%t", None, 1100, 800, True),
 ]
 
-CUSTOM_TOOLS = ["reset-password"]
+# Command-line Custom Tools, by the app they're meant for.
+P4V_CUSTOM_TOOLS = ["export-p4config"]
+P4ADMIN_CUSTOM_TOOLS = ["reset-password"]
 
 HEADER = '<?xml version="1.0" encoding="UTF-8"?>\n<!--perforce-xml-version=1-->\n'
 
@@ -117,9 +121,9 @@ def windows_xml(app: str) -> str:
     return "".join(parts)
 
 
-def custom_tools_xml(os_key: str) -> str:
+def custom_tools_xml(os_key: str, tools: list[str]) -> str:
     parts = [HEADER, '<CustomToolDefList varName="customtooldeflist">\n']
-    for tool_id in CUSTOM_TOOLS:
+    for tool_id in tools:
         tool = json.loads((SITE / "custom-tools" / f"{tool_id}.json").read_text(encoding="utf-8"))
         cmd = tool[os_key]
         options = tool.get("options", [])
@@ -149,8 +153,10 @@ def main() -> None:
         "p4v-tabs.xml": tabs_xml(),
         "p4v-right-click-tools.xml": windows_xml("p4v"),
         "p4admin-right-click-tools.xml": windows_xml("p4admin"),
-        "p4admin-custom-tools-pc.xml": custom_tools_xml("windows"),
-        "p4admin-custom-tools-mac.xml": custom_tools_xml("macos"),
+        "p4v-custom-tools-pc.xml": custom_tools_xml("windows", P4V_CUSTOM_TOOLS),
+        "p4v-custom-tools-mac.xml": custom_tools_xml("macos", P4V_CUSTOM_TOOLS),
+        "p4admin-custom-tools-pc.xml": custom_tools_xml("windows", P4ADMIN_CUSTOM_TOOLS),
+        "p4admin-custom-tools-mac.xml": custom_tools_xml("macos", P4ADMIN_CUSTOM_TOOLS),
     }
     for name, text in files.items():
         (OUT / name).write_text(text, encoding="utf-8", newline="\n")

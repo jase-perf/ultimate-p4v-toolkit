@@ -856,6 +856,20 @@
                     <span class="dl-what">Revert Exclusive Checkouts (admins) and Virtual Stream Utility.</span>
                   </span>
                 </a>
+                <a class="dl" href="xml/p4v-custom-tools-pc.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4v-custom-tools-pc.xml</span>
+                    <span class="dl-what">Export .p4config, on a Windows PC</span>
+                  </span>
+                </a>
+                <a class="dl" href="xml/p4v-custom-tools-mac.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4v-custom-tools-mac.xml</span>
+                    <span class="dl-what">Export .p4config, on a Mac</span>
+                  </span>
+                </a>
               </div>
               <div class="dl-group">For P4Admin (super users)</div>
               <div class="downloads">
@@ -899,6 +913,12 @@
                   tools that open in their own window). Right-click files or
                   folders for Revert Exclusive Checkouts, or a virtual stream
                   for Virtual Stream Utility.
+                </li>
+                <li>
+                  <strong>p4v-custom-tools-pc.xml</strong> or
+                  <strong>p4v-custom-tools-mac.xml</strong>: in P4V,
+                  <span class="menu-path">Custom Tools</span>. Run it from the
+                  <span class="menu-path">Tools</span> menu.
                 </li>
                 <li>
                   <strong>p4admin-custom-tools-pc.xml</strong> or
@@ -973,7 +993,8 @@
               <dl class="fields" id="teamFields"></dl>
               <p class="section-lead" style="margin: 10px 0 0; font-size: 12px">
                 P4V picks these up the next time people connect. They only cover
-                P4V, so Reset User Password is still imported in P4Admin.
+                the tabs and right-click tools, so Export .p4config is still
+                imported in P4V, and Reset User Password in P4Admin.
                 If your server uses <code>P4VJS.HTMLAllowList</code>, add
                 <code>https://jase.town</code> to it.
               </p>
@@ -1114,6 +1135,7 @@
               "Give someone a temporary password and make them choose a new one when they next log in. The message to send them is copied for you. Needs the p4 command-line client.",
             find: "In P4Admin, right-click a user > Reset User Password (Super User)",
             customTool: "reset-password",
+            app: "P4Admin",
             install: {
               before: "Import ",
               links: [
@@ -1121,6 +1143,25 @@
                 ["xml/p4admin-custom-tools-mac.xml", "the Mac file"],
               ],
               after: " in P4Admin under Manage Tools > Custom Tools.",
+            },
+          },
+          {
+            name: "Export .p4config",
+            kind: "Tools menu",
+            who: "Everyone",
+            placeholder: ["EXPORT .P4CONFIG", "Tools menu in P4V"],
+            desc:
+              "Save your current workspace's server, user and workspace name in a .p4config file at its root, so the p4 command line, game engines and other tools connect the same way P4V does inside that folder. It never overwrites an existing file.",
+            find: "In P4V, Tools > Export .p4config",
+            customTool: "export-p4config",
+            app: "P4V",
+            install: {
+              before: "Import ",
+              links: [
+                ["xml/p4v-custom-tools-pc.xml", "the Windows PC file"],
+                ["xml/p4v-custom-tools-mac.xml", "the Mac file"],
+              ],
+              after: " in P4V under Manage Tools > Custom Tools.",
             },
           },
         ];
@@ -1231,7 +1272,7 @@
                   "div",
                   { className: "card-meta" },
                   el("span", {}, el("span", { className: "dot", style: `background:${whoColor}` }), tool.who),
-                  el("span", {}, tool.kind === "Tab" ? "P4V tab" : tool.customTool ? "P4Admin right-click tool" : "P4V right-click tool")
+                  el("span", {}, tool.kind === "Tab" ? "P4V tab" : tool.customTool ? `${tool.app} ${tool.kind === "Tools menu" ? "Tools menu" : "right-click tool"}` : "P4V right-click tool")
                 ),
                 el(
                   "p",
@@ -1281,7 +1322,7 @@
               .then((r) => r.json())
               .then((def) => {
                 fields.append(
-                  ...field("Add it as", "Custom Tool, in P4Admin (Tools > Manage Tools > Custom Tools > New > Tool…)").flat(),
+                  ...field("Add it as", `Custom Tool, in ${tool.app} (Tools > Manage Tools > Custom Tools > New > Tool…)`).flat(),
                   ...field("Options", def.options.join(", ")).flat(),
                   ...field(
                     "Note",
