@@ -130,9 +130,45 @@ def revert_exclusive():
     finish(img, "revert-exclusive-checkouts")
 
 
+def virtual_stream():
+    # A dashed stream box (how P4V draws a virtual stream) holding a
+    # checklist: two folders ticked, one left out.
+    img, d = base()
+    plate(d)
+    dash = "#7dd3fc"
+    x0, y0, x1, y1 = 4.5, 4.5, 31.5, 31.5
+    step, run = 4.0, 2.4
+    t = 1.3
+    x = x0
+    while x < x1:
+        e = min(x + run, x1)
+        rect(d, x, y0, e, y0 + t, dash, r=0.4)
+        rect(d, x, y1 - t, e, y1, dash, r=0.4)
+        x += step
+    y = y0
+    while y < y1:
+        e = min(y + run, y1)
+        rect(d, x0, y, x0 + t, e, dash, r=0.4)
+        rect(d, x1 - t, y, x1, e, dash, r=0.4)
+        y += step
+    white = "#ffffff"
+    for i, on in enumerate((True, False, True)):
+        top = 9 + i * 6.5
+        box = "#22c55e" if on else "#2b4a6e"
+        rect(d, 8.5, top, 13.5, top + 5, box, r=1)
+        if on:
+            d.line(
+                [(px(9.6), px(top + 2.6)), (px(10.8), px(top + 3.8)), (px(12.6), px(top + 1.3))],
+                fill=white, width=px(1.1), joint="curve",
+            )
+        rect(d, 15.5, top + 1.4, 27 if on else 24, top + 3.6, white if on else "#5b7aa0", r=1)
+    finish(img, "virtual-stream-utility")
+
+
 if __name__ == "__main__":
     project_activity()
     server_activity()
     depot_size_map()
     revert_exclusive()
+    virtual_stream()
     print("Wrote icons to", OUT)

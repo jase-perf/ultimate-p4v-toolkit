@@ -21,4 +21,24 @@
     <AddToContext>true</AddToContext>
     <Refresh>true</Refresh>
   </HtmlWindow>
+  <HtmlWindow>
+    <Definition>
+      <Name>Virtual Stream Utility</Name>
+      <Url>https://jase.town/ultimate-p4v-toolkit/tools/virtual-stream-utility/index.html</Url>
+      <Argument>%t</Argument>
+      <Shortcut></Shortcut>
+      <Width>1100</Width>
+      <Heigth>800</Heigth>
+      <HTMLContextMenus>
+        <item>Back</item>
+        <item>Forward</item>
+        <item>Reload</item>
+        <item>Stop</item>
+        <item>Inspect</item>
+      </HTMLContextMenus>
+      <Identifier>a4636e4a-de6e-5671-b0af-406dee74618a</Identifier>
+    </Definition>
+    <AddToContext>true</AddToContext>
+    <Refresh>true</Refresh>
+  </HtmlWindow>
 </HtmlWindowList>

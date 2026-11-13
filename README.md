@@ -15,6 +15,7 @@ Work in progress.
 | [Server Activity](site/tools/server-activity/) | P4V HTML Tab | none | Everyone |
 | [Reset User Password](cli-tools/reset-password/) | P4Admin Custom Tool (Windows PC or Mac, needs `p4` on PATH) | `%u` (user) | Super users |
 | [Revert Exclusive Checkouts](site/tools/revert-exclusive-checkouts/) | P4V HTML Window (P4Admin optional) | `%D`, `%F`, or `%r` (files or folders) | Admins and super users |
+| [Virtual Stream Utility](site/tools/virtual-stream-utility/) | P4V HTML Window | `%t` (a virtual stream) | Anyone who can edit the stream |
 | [Typemap Editor](site/tools/typemap/) | P4V HTML Tab | none | Admins and super users |
 | [AI Help](site/tools/ai-help/) | P4V HTML Tab | none | Everyone |
 
@@ -33,7 +34,7 @@ The file names never use "windows" for P4V's HTML Windows, so "Windows" below al
 | File | What's in it | Import it in |
 |---|---|---|
 | [`p4v-tabs.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4v-tabs.xml) | Active Files, Server Activity, Depot Size Map, Typemap Editor and AI Help, with tab icons | P4V: *Tools > Manage Tools > HTML Tabs > Import* |
-| [`p4v-right-click-tools.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4v-right-click-tools.xml) | Revert Exclusive Checkouts | P4V: *Tools > Manage Tools > HTML Windows > Import* |
+| [`p4v-right-click-tools.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4v-right-click-tools.xml) | Revert Exclusive Checkouts and Virtual Stream Utility | P4V: *Tools > Manage Tools > HTML Windows > Import* |
 | [`p4admin-custom-tools-pc.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-custom-tools-pc.xml) / [`p4admin-custom-tools-mac.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-custom-tools-mac.xml) | Reset User Password, for a Windows PC or a Mac | P4Admin: *Tools > Manage Tools > Custom Tools > Import* |
 | [`p4admin-right-click-tools.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-right-click-tools.xml) | Revert Exclusive Checkouts for P4Admin (optional) | P4Admin: *Tools > Manage Tools > HTML Windows > Import* |
 

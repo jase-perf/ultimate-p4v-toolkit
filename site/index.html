@@ -853,7 +853,7 @@
                   <span class="dl-arrow">↓</span>
                   <span class="dl-text">
                     <span class="dl-name glitch">p4v-right-click-tools.xml</span>
-                    <span class="dl-what">Revert Exclusive Checkouts. Admins only.</span>
+                    <span class="dl-what">Revert Exclusive Checkouts (admins) and Virtual Stream Utility.</span>
                   </span>
                 </a>
               </div>
@@ -897,7 +897,8 @@
                   <strong>p4v-right-click-tools.xml</strong>: in P4V,
                   <span class="menu-path">HTML Windows</span> (P4V's name for
                   tools that open in their own window). Right-click files or
-                  folders to use it.
+                  folders for Revert Exclusive Checkouts, or a virtual stream
+                  for Virtual Stream Utility.
                 </li>
                 <li>
                   <strong>p4admin-custom-tools-pc.xml</strong> or
@@ -1059,6 +1060,25 @@
                 path: "tools/revert-exclusive-checkouts/index.html",
                 arg: "%D in P4V, or %F in P4Admin",
                 size: "960 × 760",
+                note: "Add to applicable context menus, and refresh P4V when the window closes",
+              },
+            ],
+          },
+          {
+            name: "Virtual Stream Utility",
+            icon: "icons/virtual-stream-utility.png",
+            kind: "Right-click",
+            who: "Everyone",
+            shots: [["screenshots/virtual-stream-utility.webp", "Window"]],
+            desc:
+              "Choose what a virtual stream shows by ticking folders and files in its parent, instead of writing its Paths by hand. It writes the shortest list of share and exclude lines, shows you the result before you save, and leaves wildcard lines it can't show untouched.",
+            find: "In P4V, right-click a virtual stream > Virtual Stream Utility",
+            manual: [
+              {
+                type: "HTML Window",
+                path: "tools/virtual-stream-utility/index.html",
+                arg: "%t",
+                size: "1100 × 800",
                 note: "Add to applicable context menus, and refresh P4V when the window closes",
               },
             ],

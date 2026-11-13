@@ -54,6 +54,7 @@ TABS = [
 # The key seeds the window's Identifier, so renaming a window doesn't change it.
 WINDOWS = [
     ("Revert Exclusive Checkouts", "Revert Exclusive Checkouts (Admin)", "tools/revert-exclusive-checkouts/index.html", "%D", "%F", 960, 760, True),
+    ("Virtual Stream Utility", "Virtual Stream Utility", "tools/virtual-stream-utility/index.html", "%t", None, 1100, 800, True),
 ]
 
 CUSTOM_TOOLS = ["reset-password"]

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Virtual Stream Utility</title>
+    <script type="text/javascript">
+      var darktheme =
+        typeof p4vjs !== "undefined" && p4vjs.useDarkTheme && p4vjs.useDarkTheme();
+      document.write(
+        '<link rel="stylesheet" type="text/css" href="../../shared/' +
+          (darktheme ? "darkstyle.css" : "style.css") +
+          '" />'
+      );
+    </script>
+    <link rel="stylesheet" type="text/css" href="../../shared/toolkit.css" />
+    <link rel="stylesheet" type="text/css" href="virtual-stream-utility.css" />
+    <script type="text/javascript" src="../../shared/toolkit.js"></script>
+    <script type="text/javascript" src="virtual-stream-utility.js"></script>
+  </head>
+  <body>
+    <main class="tk-app vs-app">
+      <header class="tk-header">
+        <h1>Virtual Stream Utility</h1>
+        <p>
+          A virtual stream shows part of its parent's files without copying
+          them. Tick the folders and files it should show, check the Paths it
+          will get, and save.
+        </p>
+      </header>
+
+      <div id="notice" hidden></div>
+
+      <section id="main" hidden>
+        <div class="tk-card">
+          <form id="streamForm" class="tk-row vs-pick">
+            <label for="streamSelect">Virtual stream</label>
+            <select id="streamSelect"></select>
+            <span id="loadStatus" class="tk-status"></span>
+          </form>
+          <p id="streamInfo" class="tk-muted vs-info" hidden></p>
+          <div id="streamNotice" hidden></div>
+        </div>
+
+        <div id="editor" class="vs-columns" hidden>
+          <div class="tk-card vs-tree-card">
+            <div class="tk-row vs-tree-head">
+              <h2 id="treeTitle">Parent's files</h2>
+              <span class="tk-spacer"></span>
+              <button type="button" id="selectAll" class="tk-btn">Tick all</button>
+              <button type="button" id="selectNone" class="tk-btn">Clear all</button>
+            </div>
+            <p class="tk-muted vs-hint">
+              Click a folder's arrow to see what's inside. Ticking a folder takes
+              everything in it, including files added to it later.
+            </p>
+            <div id="ignoreHint" hidden></div>
+            <ul id="tree" class="vs-tree" role="tree"></ul>
+          </div>
+
+          <div class="tk-card vs-preview-card">
+            <div class="tk-row">
+              <h2>Paths</h2>
+              <span class="tk-spacer"></span>
+              <span id="changeSummary" class="tk-muted"></span>
+            </div>
+            <pre id="pathsPreview" class="vs-paths"></pre>
+            <div id="keptBox" hidden>
+              <p class="tk-muted vs-kept-title">
+                Kept as written (the tree can't show these, so they're added
+                after the lines above):
+              </p>
+              <pre id="keptLines" class="vs-paths vs-kept"></pre>
+            </div>
+            <div class="tk-actions">
+              <button type="button" id="saveButton" class="tk-btn tk-btn-primary" disabled>
+                Save to stream
+              </button>
+              <button type="button" id="undoButton" class="tk-btn" disabled>Undo changes</button>
+              <span id="saveStatus" class="tk-status"></span>
+            </div>
+            <details class="vs-spec">
+              <summary>Whole stream spec</summary>
+              <pre id="specPreview" class="vs-paths"></pre>
+            </details>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
