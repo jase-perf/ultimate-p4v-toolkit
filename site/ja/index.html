@@ -1,0 +1,1374 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ultimate P4V Toolkit（P4V・P4Admin用ツール集） | Jase Lindgren</title>
+    <meta
+      name="description"
+      content="P4VとP4Admin用の無料ツール集。誰が何をチェックアウトしているかのライブマップ、サーバーのアクティビティ推移、デポのサイズなど。ツールファイルをインポートするだけでP4Vに表示されます。"
+    />
+    <link rel="icon" type="image/png" href="../icons/project-activity.png" />
+    <link rel="alternate" hreflang="en" href="/ultimate-p4v-toolkit/" />
+    <link rel="alternate" hreflang="ja" href="/ultimate-p4v-toolkit/ja/" />
+    <script src="/lang.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=M+PLUS+1+Code:wght@400;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #eceef4;
+        --hero-top: #f2f3f9;
+        --hero-bottom: #e9ebf3;
+        --ink: #1a1a24;
+        --body: #3c3a4c;
+        --muted: #56545f;
+        --faint: #6a6a76;
+        --accent: #6a5fb0;
+        --teal: #46c8a2;
+        --violet: #a394f0;
+        --card: #fbfaff;
+        --line: rgba(60, 40, 120, 0.12);
+        --rule: rgba(60, 40, 120, 0.18);
+        --shadow: rgba(80, 60, 160, 0.07);
+        --shadow-hover: rgba(80, 60, 160, 0.16);
+        --code-bg: rgba(60, 40, 120, 0.07);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #15141c;
+          --hero-top: #1b1a24;
+          --hero-bottom: #15141c;
+          --ink: #f1effa;
+          --body: #c9c6d8;
+          --muted: #aeaabf;
+          --faint: #9894ab;
+          --accent: #b4a8f5;
+          --card: #1e1d28;
+          --line: rgba(180, 168, 245, 0.14);
+          --rule: rgba(180, 168, 245, 0.2);
+          --shadow: rgba(0, 0, 0, 0.3);
+          --shadow-hover: rgba(0, 0, 0, 0.5);
+          --code-bg: rgba(180, 168, 245, 0.1);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Space Mono", "M PLUS 1 Code", monospace;
+        line-break: strict;
+        word-break: auto-phrase;
+      }
+      a {
+        color: var(--accent);
+      }
+      code {
+        font-family: "Space Mono", "M PLUS 1 Code", monospace;
+        background: var(--code-bg);
+        padding: 1px 5px;
+        font-size: 0.92em;
+      }
+
+      @keyframes gradShift {
+        0% {
+          background-position: 0% 50%;
+        }
+        100% {
+          background-position: 200% 50%;
+        }
+      }
+      @keyframes glitch {
+        0%,
+        3.3%,
+        4.7%,
+        5.3%,
+        6.7%,
+        21.3%,
+        22.7%,
+        39.3%,
+        40.7%,
+        62.3%,
+        63.7%,
+        84.3%,
+        85.7%,
+        100% {
+          text-shadow: none;
+          transform: translate(0, 0);
+        }
+        4% {
+          text-shadow:
+            -1px 0 #46c8a2,
+            1px 0 #a394f0;
+          transform: translate(1px, 0);
+        }
+        6% {
+          text-shadow:
+            2px 0 #46c8a2,
+            -2px 0 #a394f0;
+          transform: translate(-1px, 0);
+        }
+        22% {
+          text-shadow: 1px 0 #a394f0;
+          transform: translate(0, 1px);
+        }
+        40% {
+          text-shadow: -1px 0 #46c8a2;
+          transform: translate(1px, 0);
+        }
+        63% {
+          text-shadow:
+            -1px 0 #a394f0,
+            1px 0 #46c8a2;
+          transform: translate(-1px, 0);
+        }
+        85% {
+          text-shadow:
+            -2px 0 #46c8a2,
+            1px 0 #a394f0;
+          transform: translate(0, -1px);
+        }
+      }
+      @keyframes waveMove {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-1180px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      /* ===== hero ===== */
+      .hero {
+        position: relative;
+        height: 340px;
+        overflow: hidden;
+        background: linear-gradient(180deg, var(--hero-top) 0%, var(--hero-bottom) 100%);
+      }
+      .wave {
+        position: absolute;
+        left: 50%;
+        margin-left: -1200px;
+      }
+      .wave-1 {
+        top: 40%;
+        transform: translateY(-50%);
+        opacity: 0.8;
+        filter: blur(3px);
+      }
+      .wave-2 {
+        top: 58%;
+        transform: translateY(-50%);
+        opacity: 0.42;
+        filter: blur(6px);
+      }
+      .wave-3 {
+        top: 30%;
+        transform: translateY(-50%);
+        opacity: 0.3;
+        filter: blur(9px);
+      }
+      .wave-1 g {
+        animation: waveMove 18s linear infinite;
+      }
+      .wave-2 g {
+        animation: waveMove 30s linear infinite;
+      }
+      .wave-3 g {
+        animation: waveMove 44s linear infinite;
+      }
+      .hero-inner {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 24px;
+      }
+      .eyebrow {
+        font-size: 12px;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        color: var(--faint);
+        margin-bottom: 16px;
+      }
+      .eyebrow a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .eyebrow a:hover {
+        color: var(--ink);
+      }
+      .hero h1 {
+        font-size: 58px;
+        font-weight: 700;
+        letter-spacing: -1px;
+        line-height: 1.05;
+        margin: 0;
+        background-image: linear-gradient(
+          100deg,
+          var(--ink) 0%,
+          var(--ink) 26%,
+          #2fb491 44%,
+          #9a7bf0 58%,
+          var(--ink) 74%,
+          var(--ink) 100%
+        );
+        background-size: 220% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+        animation: gradShift 7s linear infinite;
+      }
+      .roleline {
+        font-size: 14px;
+        color: var(--muted);
+        margin-top: 16px;
+        letter-spacing: 0.5px;
+      }
+
+      /* ===== body ===== */
+      .body {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 32px;
+      }
+      .intro-wrap {
+        padding: 48px 0 8px;
+        text-align: center;
+      }
+      .intro {
+        font-size: 16px;
+        line-height: 1.8;
+        color: var(--body);
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      .intro + .intro {
+        margin-top: 14px;
+      }
+      .section {
+        padding: 48px 0 8px;
+      }
+      .section-title {
+        font-size: 13px;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 24px;
+        font-weight: 400;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .section-title .rule {
+        flex: 1;
+        height: 1px;
+        background: var(--rule);
+      }
+      .section-lead {
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--body);
+        margin: -8px 0 24px;
+        max-width: 760px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      /* ===== cards ===== */
+      .card {
+        display: block;
+        background: var(--card);
+        border: 1px solid var(--line);
+        color: inherit;
+        box-shadow: 0 14px 30px var(--shadow);
+        transition:
+          transform 0.25s,
+          box-shadow 0.25s;
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 22px 44px var(--shadow-hover);
+      }
+      .card:hover .glitch {
+        animation: glitch 5s linear infinite;
+      }
+      .card-bar {
+        height: 5px;
+        background: linear-gradient(90deg, var(--teal), var(--violet));
+      }
+      .card-body {
+        padding: 22px 24px 20px;
+      }
+      .card-name {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .card-name img {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+        flex: none;
+      }
+      .card-desc {
+        font-size: 13px;
+        line-height: 1.65;
+        color: var(--muted);
+        margin: 12px 0 16px;
+      }
+      .card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        font-size: 12px;
+        color: var(--faint);
+      }
+      .card-meta .dot {
+        width: 9px;
+        height: 9px;
+        display: inline-block;
+        margin-right: 7px;
+        border-radius: 50%;
+        vertical-align: 0;
+      }
+      .find {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 14px 0 0;
+        padding-top: 12px;
+        border-top: 1px dashed var(--line);
+        line-height: 1.6;
+      }
+      .find strong {
+        color: var(--accent);
+        font-weight: 400;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-size: 11px;
+        margin-right: 6px;
+      }
+
+      /* screenshots */
+      .shot {
+        display: block;
+        position: relative;
+        aspect-ratio: 1400 / 860;
+        overflow: hidden;
+        border-bottom: 1px solid var(--line);
+        background: var(--hero-bottom);
+      }
+      .shot img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top left;
+        display: block;
+      }
+      .shot-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+      .shot-strip button {
+        all: unset;
+        cursor: pointer;
+        aspect-ratio: 1400 / 860;
+        overflow: hidden;
+        position: relative;
+        background: var(--card);
+      }
+      .shot-strip img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top left;
+        display: block;
+        opacity: 0.55;
+        transition: opacity 0.2s;
+      }
+      .shot-strip button:hover img,
+      .shot-strip button[aria-pressed="true"] img {
+        opacity: 1;
+      }
+      .shot-strip span {
+        position: absolute;
+        left: 6px;
+        bottom: 5px;
+        font-size: 10px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        background: var(--card);
+        color: var(--ink);
+        padding: 1px 6px;
+      }
+      .shot-strip button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+      }
+      .placeholder {
+        aspect-ratio: 1400 / 860;
+        background: linear-gradient(135deg, var(--teal), var(--violet));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: #fff;
+        font-size: 15px;
+        letter-spacing: 2px;
+        font-weight: 700;
+        text-align: center;
+        padding: 20px;
+      }
+      .placeholder small {
+        font-weight: 400;
+        letter-spacing: 0.5px;
+        font-size: 12px;
+        opacity: 0.9;
+      }
+
+      /* ===== install steps ===== */
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        counter-reset: step;
+      }
+      .step .card-body {
+        padding-top: 18px;
+      }
+      .step-num {
+        font-size: 11px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .step h3 {
+        font-size: 15px;
+        margin: 6px 0 10px;
+      }
+      .step p {
+        font-size: 13px;
+        line-height: 1.65;
+        color: var(--muted);
+        margin: 0 0 10px;
+      }
+      .step p:last-child {
+        margin-bottom: 0;
+      }
+      .menu-path {
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      .downloads {
+        display: grid;
+        gap: 10px;
+        margin-top: 4px;
+      }
+      .dl-group {
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 4px 0 8px;
+      }
+      .downloads + .dl-group {
+        margin-top: 18px;
+      }
+      .import-list {
+        margin: 0 0 10px;
+        padding-left: 18px;
+        font-size: 13px;
+        line-height: 1.65;
+        color: var(--muted);
+      }
+      .import-list li {
+        margin-bottom: 8px;
+      }
+      .import-list strong {
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      .dl {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: var(--ink);
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        transition:
+          border-color 0.2s,
+          transform 0.2s;
+      }
+      .dl:hover {
+        border-color: var(--accent);
+        transform: translateX(3px);
+      }
+      .dl:hover .glitch {
+        animation: glitch 5s linear infinite;
+      }
+      .dl.primary {
+        background: linear-gradient(90deg, rgba(70, 200, 162, 0.16), rgba(163, 148, 240, 0.2));
+        border-color: rgba(106, 95, 176, 0.35);
+      }
+      .dl-arrow {
+        font-size: 16px;
+        color: var(--accent);
+        flex: none;
+      }
+      .dl-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .dl-name {
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .dl-what {
+        font-size: 11px;
+        color: var(--faint);
+        line-height: 1.5;
+      }
+      .admin-note {
+        margin-top: 20px;
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--muted);
+      }
+
+      /* ===== manual install ===== */
+      details.manual {
+        background: var(--card);
+        border: 1px solid var(--line);
+        box-shadow: 0 14px 30px var(--shadow);
+      }
+      details.manual > summary {
+        cursor: pointer;
+        list-style: none;
+        padding: 18px 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        font-size: 15px;
+      }
+      details.manual > summary::-webkit-details-marker {
+        display: none;
+      }
+      details.manual > summary::before {
+        content: "+";
+        color: var(--accent);
+        font-size: 20px;
+        width: 14px;
+        line-height: 1;
+      }
+      details.manual[open] > summary::before {
+        content: "−";
+      }
+      details.manual > summary:hover .glitch {
+        animation: glitch 5s linear infinite;
+      }
+      details.manual > summary .sub {
+        font-weight: 400;
+        font-size: 12px;
+        color: var(--faint);
+      }
+      .manual-body {
+        padding: 0 24px 24px;
+        border-top: 1px solid var(--line);
+      }
+      .manual-body > p {
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--muted);
+        margin: 18px 0 0;
+      }
+      .manual-tool {
+        padding: 18px 0;
+        border-bottom: 1px dashed var(--line);
+      }
+      .manual-tool:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+      }
+      .manual-tool h3 {
+        font-size: 14px;
+        margin: 0 0 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .tag {
+        font-size: 11px;
+        font-weight: 400;
+        color: var(--accent);
+        border: 1px solid var(--rule);
+        padding: 0 7px;
+        letter-spacing: 0.5px;
+      }
+      .fields {
+        display: grid;
+        grid-template-columns: 8.5rem 1fr auto;
+        gap: 6px 12px;
+        align-items: start;
+        font-size: 12px;
+      }
+      .fields dt {
+        color: var(--faint);
+        padding-top: 3px;
+      }
+      .fields dd {
+        margin: 0;
+        min-width: 0;
+      }
+      .fields dd code {
+        display: block;
+        max-height: 4.6em;
+        overflow: auto;
+        white-space: nowrap;
+        white-space: pre-wrap;
+        padding: 3px 7px;
+      }
+      .fields .plain {
+        grid-column: 2 / 4;
+        color: var(--body);
+        padding-top: 3px;
+        line-height: 1.6;
+      }
+      .copy {
+        font: inherit;
+        font-size: 11px;
+        cursor: pointer;
+        background: none;
+        color: var(--accent);
+        border: 1px solid var(--rule);
+        padding: 3px 9px;
+        min-width: 4.8rem;
+      }
+      .copy:hover {
+        border-color: var(--accent);
+        color: var(--ink);
+      }
+      .os-label {
+        grid-column: 1 / 4;
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-top: 8px;
+      }
+      .source-cta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 22px;
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .source-cta a {
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .source-cta a:hover {
+        color: var(--ink);
+      }
+
+      /* ===== footer ===== */
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        padding: 36px 0;
+        margin-top: 48px;
+        border-top: 1px solid var(--rule);
+        font-size: 12px;
+        color: var(--faint);
+      }
+      .foot-link {
+        color: var(--muted);
+        text-decoration: none;
+      }
+      .foot-link:hover {
+        animation: glitch 5s linear infinite;
+        color: var(--ink);
+      }
+
+      /* ===== responsive ===== */
+      @media (max-width: 900px) {
+        .steps {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 720px) {
+        .hero {
+          height: 270px;
+        }
+        .hero h1 {
+          font-size: 34px;
+        }
+        .roleline {
+          font-size: 12px;
+        }
+        .body {
+          padding: 0 16px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .fields {
+          grid-template-columns: 1fr auto;
+        }
+        .fields dt,
+        .os-label {
+          grid-column: 1 / 3;
+        }
+        .fields .plain {
+          grid-column: 1 / 3;
+        }
+        .footer {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ===== HERO ===== -->
+    <div class="hero">
+      <svg class="wave wave-1" viewBox="0 0 1180 200" width="2400" height="220" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="wgA" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#46c8a2" />
+            <stop offset="1" stop-color="#a394f0" />
+          </linearGradient>
+        </defs>
+        <g>
+          <path
+            d="M0 100 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0 q 73.75 -42 147.5 0 q 73.75 42 147.5 0"
+            stroke="url(#wgA)"
+            stroke-width="2.5"
+            fill="none"
+          />
+        </g>
+      </svg>
+      <svg class="wave wave-2" viewBox="0 0 1180 200" width="2400" height="220" preserveAspectRatio="none" aria-hidden="true">
+        <g>
+          <path
+            d="M0 100 q 98 38 196 0 q 98 -38 196 0 q 98 38 196 0 q 98 -38 196 0 q 98 38 196 0 q 98 -38 196 0 q 98 38 196 0 q 98 -38 196 0 q 98 38 196 0 q 98 -38 196 0 q 98 38 196 0 q 98 -38 196 0"
+            stroke="#9a7bf0"
+            stroke-width="2"
+            fill="none"
+          />
+        </g>
+      </svg>
+      <svg class="wave wave-3" viewBox="0 0 1180 200" width="2400" height="220" preserveAspectRatio="none" aria-hidden="true">
+        <g>
+          <path
+            d="M0 100 q 130 -50 260 0 q 130 50 260 0 q 130 -50 260 0 q 130 50 260 0 q 130 -50 260 0 q 130 50 260 0 q 130 -50 260 0 q 130 50 260 0 q 130 -50 260 0 q 130 50 260 0"
+            stroke="#46c8a2"
+            stroke-width="2"
+            fill="none"
+          />
+        </g>
+      </svg>
+      <div class="hero-inner">
+        <div class="eyebrow"><a href="https://jase.town/">jase.town</a> // p4v</div>
+        <h1>ULTIMATE P4V TOOLKIT</h1>
+        <div class="roleline">
+          無料&nbsp;&nbsp;·&nbsp;&nbsp;インストール不要&nbsp;&nbsp;·&nbsp;&nbsp;P4VとP4Adminで動作
+        </div>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="intro-wrap">
+        <p class="intro">
+          P4VとP4Adminに新しいタブと右クリックツールを追加します。誰が何をチェックアウトしているか、サーバー全体で何が変更されているか、容量がどこで使われているかがわかります。
+        </p>
+        <p class="intro">
+          ツールはP4Vの中で、今お使いのログインのまま動作します。アプリのインストールもサーバー側の設定も必要ありません。ツールファイルをP4Vにインポートすればすぐに使え、ツールキットが更新されると自動的に最新版になります。
+        </p>
+      </div>
+
+      <!-- ===== INSTALL ===== -->
+      <section class="section" id="install">
+        <h2 class="section-title">1分でインストール <span class="rule"></span></h2>
+        <div class="steps">
+          <div class="card step">
+            <div class="card-bar"></div>
+            <div class="card-body">
+              <div class="step-num">ステップ 1</div>
+              <h3>ツールをダウンロード</h3>
+              <div class="dl-group">P4V用</div>
+              <div class="downloads">
+                <a class="dl primary" href="../xml/p4v-tabs.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4v-tabs.xml</span>
+                    <span class="dl-what">5つのタブ。まずはこちらから。</span>
+                  </span>
+                </a>
+                <a class="dl" href="../xml/p4v-right-click-tools.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4v-right-click-tools.xml</span>
+                    <span class="dl-what">Revert Exclusive Checkouts（管理者向け）とVirtual Stream Utility。</span>
+                  </span>
+                </a>
+                <a class="dl" href="../xml/p4v-custom-tools-pc.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4v-custom-tools-pc.xml</span>
+                    <span class="dl-what">Export .p4config（Windows PC用）</span>
+                  </span>
+                </a>
+                <a class="dl" href="../xml/p4v-custom-tools-mac.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4v-custom-tools-mac.xml</span>
+                    <span class="dl-what">Export .p4config（Mac用）</span>
+                  </span>
+                </a>
+              </div>
+              <div class="dl-group">P4Admin用（管理者向け）</div>
+              <div class="downloads">
+                <a class="dl" href="../xml/p4admin-tabs.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4admin-tabs.xml</span>
+                    <span class="dl-what">Typemap EditorとAI Help（P4Adminのタブとして）</span>
+                  </span>
+                </a>
+                <a class="dl" href="../xml/p4admin-custom-tools-pc.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4admin-custom-tools-pc.xml</span>
+                    <span class="dl-what">Reset User Password（Windows PC用）</span>
+                  </span>
+                </a>
+                <a class="dl" href="../xml/p4admin-custom-tools-mac.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4admin-custom-tools-mac.xml</span>
+                    <span class="dl-what">Reset User Password（Mac用）</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="card step">
+            <div class="card-bar"></div>
+            <div class="card-body">
+              <div class="step-num">ステップ 2</div>
+              <h3>インポートする</h3>
+              <p>
+                各ファイルは
+                <span class="menu-path">Tools &gt; Manage Tools</span>
+                の中の、それぞれ決まった場所にインポートします。下記の項目を選んで<em>Import</em>をクリックし、ファイルを選択してください。
+              </p>
+              <ul class="import-list">
+                <li>
+                  <strong>p4v-tabs.xml</strong>：P4Vの
+                  <span class="menu-path">HTML Tabs</span>に。タブは
+                  <span class="menu-path">View</span>メニューから開きます。
+                </li>
+                <li>
+                  <strong>p4v-right-click-tools.xml</strong>：P4Vの
+                  <span class="menu-path">HTML Windows</span>（別ウィンドウで開くツールのP4Vでの呼び名）に。ファイルやフォルダを右クリックするとRevert
+                  Exclusive Checkouts、仮想ストリームを右クリックするとVirtual Stream Utilityが使えます。
+                </li>
+                <li>
+                  <strong>p4v-custom-tools-pc.xml</strong>または
+                  <strong>p4v-custom-tools-mac.xml</strong>：P4Vの
+                  <span class="menu-path">Custom Tools</span>に。
+                  <span class="menu-path">Tools</span>メニューから実行します。
+                </li>
+                <li>
+                  <strong>p4admin-tabs.xml</strong>：P4Adminの
+                  <span class="menu-path">HTML Tabs</span>に。タブは
+                  <span class="menu-path">View</span>メニューから開きます。
+                </li>
+                <li>
+                  <strong>p4admin-custom-tools-pc.xml</strong>または
+                  <strong>p4admin-custom-tools-mac.xml</strong>：P4Adminの
+                  <span class="menu-path">Custom Tools</span>に。ユーザーを右クリックして使います。
+                </li>
+              </ul>
+              <p>
+                インポートの前に、P4Vがファイル内のツールを一覧表示します。不要なものはチェックを外してください。<em>(Admin)</em>と付いたツールは管理者とスーパーユーザーしか使えないので、それ以外の方は外して構いません。
+              </p>
+              <p>
+                ツールが読み込まれない場合は、
+                <span class="menu-path">Preferences &gt; HTML Tools</span>
+                の許可されたベースURLを確認してください。リストが制限されている場合は、<code>https://jase.town</code>を追加する必要があります。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p class="admin-note">
+          <strong>チームで使う場合：</strong>サーバー管理者がP4Vの参照先をこれらのファイルに設定すれば、インポートなしで全員にタブと右クリックツールを一度に配布できます。コマンドは下の<a href="#manual">手動インストール</a>をご覧ください。
+        </p>
+      </section>
+
+      <!-- ===== PRIVACY ===== -->
+      <section class="section" id="privacy">
+        <h2 class="section-title">データは外に出ません <span class="rule"></span></h2>
+        <p class="section-lead">
+          ツールはあなたのログインを使い、P4Vを通じてP4 Serverからデータを取得します。並べ替えや集計、描画はすべてお使いのコンピューター上で行われ、サーバーのデータが外部に送られることは一切ありません。Server Activityの履歴も、お使いのコンピューター内にだけ残ります。
+        </p>
+        <p class="section-lead">
+          唯一の例外は<strong>AI Help</strong>です。入力した質問を、回答を得るためにPerforce公式のAIサポートアシスタントへ送信します。
+        </p>
+      </section>
+
+      <!-- ===== TOOLS ===== -->
+      <section class="section" id="tools">
+        <h2 class="section-title">ツール一覧 <span class="rule"></span></h2>
+        <div class="grid" id="toolGrid"></div>
+      </section>
+
+      <!-- ===== MANUAL ===== -->
+      <section class="section" id="manual">
+        <h2 class="section-title">手動インストール <span class="rule"></span></h2>
+        <details class="manual" id="manualDetails">
+          <summary>
+            <span class="glitch">ツールを個別に、またはチーム全体に設定する</span>
+          </summary>
+          <div class="manual-body">
+            <p>
+              各ツールは、P4Vが読み込むWebページです。手動で追加するには
+              <span class="menu-path">Tools &gt; Manage Tools</span>
+              で新しいHTML TabまたはHTML Windowを追加し、以下の値を入力してください。
+            </p>
+
+            <div id="manualTools"></div>
+
+            <div class="manual-tool">
+              <h3>P4Vチーム全体に配布する <span class="tag">サーバー管理者</span></h3>
+              <dl class="fields" id="teamFields"></dl>
+              <p class="section-lead" style="margin: 10px 0 0; font-size: 12px">
+                各ユーザーが次回接続したときにP4Vに反映されます。対象はタブと右クリックツールのみなので、Export
+                .p4configはP4Vで、Reset User PasswordはP4Adminで、引き続き個別にインポートしてください。
+                サーバーで<code>P4VJS.HTMLAllowList</code>を使っている場合は、<code>https://jase.town</code>を追加してください。
+              </p>
+            </div>
+
+            <div class="source-cta">
+              <span>ツールの改造や自前でのホストも自由です。すべてオープンソース（MIT）で公開しています。</span>
+              <a href="https://github.com/jase-perf/ultimate-p4v-toolkit" target="_blank" rel="noopener"
+                ><span class="glitch">GitHubでソースを見る →</span></a
+              >
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <div class="footer">
+        <div>
+          <a class="foot-link" href="https://jase.town/">jase.town</a>
+        </div>
+        <div>© 2026 Jase Lindgren for Perforce Software</div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const BASE = new URL(".", location.href);
+        const REPO = "https://github.com/jase-perf/ultimate-p4v-toolkit";
+
+        const tools = [
+          {
+            name: "Active Files",
+            icon: "../icons/project-activity.png",
+            kind: "Tab",
+            who: "全員",
+            shots: [["../screenshots/project-activity.webp", "マップ"]],
+            desc:
+              "プロジェクト内でチェックアウトされているすべてのファイルを、誰が持っているかで色分けしたライブマップ。排他チェックアウトには鍵が表示され、複数人が開いているファイルは目立つので、競合を事前に把握できます。",
+            find: "View > Active Files",
+            manual: [{ type: "HTML Tab", path: "../tools/project-activity/index.html" }],
+          },
+          {
+            name: "Server Activity",
+            icon: "../icons/server-activity.png",
+            kind: "Tab",
+            who: "全員",
+            shots: [
+              ["../screenshots/server-activity.webp", "推移"],
+              ["../screenshots/server-activity-calendar.webp", "カレンダー"],
+              ["../screenshots/server-activity-people.webp", "ユーザー"],
+            ],
+            desc:
+              "誰がどこで作業していて、何が変更されているか。ユーザー・フォルダ・操作別の推移、ストリームごとのアクティビティカレンダー、更新が止まったフォルダのマップを表示します。履歴はお使いのコンピューターに保存されるので、次回からはすばやく開けます。",
+            find: "View > Server Activity",
+            manual: [{ type: "HTML Tab", path: "../tools/server-activity/index.html" }],
+          },
+          {
+            name: "Depot Size Map",
+            icon: "../icons/depot-size-map.png",
+            kind: "Tab",
+            who: "全員",
+            shots: [["../screenshots/depot-size-map.webp", "マップ"]],
+            desc:
+              "容量がどこで使われているかを調べられます。サイズに応じた大きさで表示されるフォルダをズームしながらたどり、同期でダウンロードされる量とサーバーに保存されている全体を比較できます。シェルブされたファイルも含められ、最大のファイルも見つかります。巨大なデポでもすばやく開きます。",
+            find: "View > Depot Size Map",
+            manual: [{ type: "HTML Tab", path: "../tools/depot-size-map/index.html" }],
+          },
+          {
+            name: "Revert Exclusive Checkouts",
+            icon: "../icons/revert-exclusive-checkouts.png",
+            kind: "Right-click",
+            who: "管理者",
+            shots: [["../screenshots/revert-exclusive-checkouts.webp", "ウィンドウ"]],
+            desc:
+              "誰かがファイルを排他チェックアウトしたまま不在で、解除できない？フォルダを右クリックすると、その中の排他チェックアウトを、誰がいつからチェックアウトしているかと合わせて一覧表示し、選んだものを解除できます。",
+            find: "P4Vでファイルやフォルダを右クリック > Revert Exclusive Checkouts (Admin)",
+            install: {
+              before: "P4Adminでも使いたい場合は、",
+              links: [["../xml/p4admin-right-click-tools.xml", "p4admin-right-click-tools.xml"]],
+              after: " をP4AdminのManage Tools > HTML Windowsにインポートしてください。",
+            },
+            manual: [
+              {
+                type: "HTML Window",
+                path: "../tools/revert-exclusive-checkouts/index.html",
+                arg: "%D in P4V, or %F in P4Admin",
+                size: "960 × 760",
+                note: "Add to applicable context menus, and refresh P4V when the window closes",
+              },
+            ],
+          },
+          {
+            name: "Virtual Stream Utility",
+            icon: "../icons/virtual-stream-utility.png",
+            kind: "Right-click",
+            who: "全員",
+            shots: [["../screenshots/virtual-stream-utility.webp", "ウィンドウ"]],
+            desc:
+              "仮想ストリームに何を含めるかを、Pathsを手で書く代わりに、親ストリームのフォルダやファイルにチェックを入れて選べます。shareとexcludeの行を最短のリストで書き出し、保存前に結果を確認でき、表示できないワイルドカード行はそのまま残します。",
+            find: "P4Vで仮想ストリームを右クリック > Virtual Stream Utility",
+            manual: [
+              {
+                type: "HTML Window",
+                path: "../tools/virtual-stream-utility/index.html",
+                arg: "%t",
+                size: "1100 × 800",
+                note: "Add to applicable context menus, and refresh P4V when the window closes",
+              },
+            ],
+          },
+          {
+            name: "Typemap Editor",
+            icon: "../icons/typemap.png",
+            kind: "Tab",
+            who: "管理者",
+            shots: [["../screenshots/typemap.webp", "エディタ"]],
+            desc:
+              "サーバーのタイプマップを、テキストファイルではなく表で編集できます。ルール同士が上書きし合う場合は警告し、ゲームプロジェクト向けのテンプレートも用意されています。",
+            find: "View > Typemap Editor (Admin)（P4VまたはP4Admin）",
+            install: {
+              before: "P4Adminでは、",
+              links: [["../xml/p4admin-tabs.xml", "p4admin-tabs.xml"]],
+              after: " をManage Tools > HTML Tabsにインポートしてください。",
+            },
+            manual: [{ type: "HTML Tab", path: "../tools/typemap/index.html" }],
+          },
+          {
+            name: "AI Help",
+            icon: "../icons/ai-help.png",
+            kind: "Tab",
+            who: "全員",
+            shots: [["../screenshots/ai-help.webp", "検索"]],
+            desc:
+              "P4についてふだんの言葉で質問すると、根拠となった公式ドキュメントやナレッジベース記事へのリンク付きで回答が得られます。",
+            find: "View > AI Help（P4VまたはP4Admin）",
+            install: {
+              before: "P4Adminでは、",
+              links: [["../xml/p4admin-tabs.xml", "p4admin-tabs.xml"]],
+              after: " をManage Tools > HTML Tabsにインポートしてください。",
+            },
+            manual: [{ type: "HTML Tab", path: "../tools/ai-help/index.html" }],
+          },
+          {
+            name: "Reset User Password",
+            kind: "Right-click",
+            who: "スーパーユーザー",
+            placeholder: ["RESET USER PASSWORD", "P4Adminでユーザーを右クリック"],
+            desc:
+              "ユーザーに一時パスワードを発行し、次回ログイン時に新しいパスワードを設定させます。本人に送るメッセージは自動でコピーされます。p4コマンドラインクライアントが必要です。",
+            find: "P4Adminでユーザーを右クリック > Reset User Password (Super User)",
+            customTool: "reset-password",
+            app: "P4Admin",
+            install: {
+              before: "",
+              links: [
+                ["../xml/p4admin-custom-tools-pc.xml", "Windows PC用ファイル"],
+                ["../xml/p4admin-custom-tools-mac.xml", "Mac用ファイル"],
+              ],
+              after: " をP4AdminのManage Tools > Custom Toolsにインポートしてください。",
+            },
+          },
+          {
+            name: "Export .p4config",
+            kind: "Tools menu",
+            who: "全員",
+            placeholder: ["EXPORT .P4CONFIG", "P4VのToolsメニュー"],
+            desc:
+              "現在のワークスペースのサーバー、ユーザー、ワークスペース名を、そのルートの.p4configファイルに保存します。これでそのフォルダ内では、p4コマンドラインやゲームエンジンなどのツールがP4Vと同じ設定で接続できます。既存のファイルは上書きしません。",
+            find: "P4Vで Tools > Export .p4config",
+            customTool: "export-p4config",
+            app: "P4V",
+            install: {
+              before: "",
+              links: [
+                ["../xml/p4v-custom-tools-pc.xml", "Windows PC用ファイル"],
+                ["../xml/p4v-custom-tools-mac.xml", "Mac用ファイル"],
+              ],
+              after: " をP4VのManage Tools > Custom Toolsにインポートしてください。",
+            },
+          },
+        ];
+
+        // ---------- helpers ----------
+        function el(tag, attrs, ...children) {
+          const node = document.createElement(tag);
+          for (const [k, v] of Object.entries(attrs || {})) {
+            if (v == null || v === false) continue;
+            if (k === "className") node.className = v;
+            else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+            else node.setAttribute(k, v === true ? "" : v);
+          }
+          for (const c of children.flat()) {
+            if (c == null || c === false) continue;
+            node.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
+          }
+          return node;
+        }
+
+        async function copyText(text) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch {
+            const ta = el("textarea", { style: "position:fixed;opacity:0" });
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            let ok = false;
+            try {
+              ok = document.execCommand("copy");
+            } catch {}
+            ta.remove();
+            return ok;
+          }
+        }
+
+        function copyButton(value) {
+          const btn = el("button", { type: "button", className: "copy" }, "コピー");
+          btn.addEventListener("click", async () => {
+            const ok = await copyText(value);
+            btn.textContent = ok ? "コピーしました" : "失敗しました";
+            setTimeout(() => (btn.textContent = "コピー"), 1600);
+          });
+          return btn;
+        }
+
+        function field(label, value, copyable) {
+          return [
+            el("dt", {}, label),
+            copyable
+              ? [el("dd", {}, el("code", {}, value)), copyButton(value)]
+              : el("dd", { className: "plain" }, value),
+          ];
+        }
+
+        // ---------- tool cards ----------
+        const grid = document.getElementById("toolGrid");
+        for (const tool of tools) {
+          let media;
+          if (tool.shots) {
+            const [first] = tool.shots;
+            const img = el("img", { src: first[0], alt: `${tool.name}: ${first[1]}`, loading: "lazy" });
+            const link = el("a", { className: "shot", href: first[0], target: "_blank", rel: "noopener" }, img);
+            media = [link];
+            if (tool.shots.length > 1) {
+              const strip = el("div", { className: "shot-strip" });
+              tool.shots.forEach(([src, label], i) => {
+                const btn = el(
+                  "button",
+                  { type: "button", "aria-pressed": String(i === 0), "aria-label": `${label}を表示` },
+                  el("img", { src, alt: "", loading: "lazy" }),
+                  el("span", {}, label)
+                );
+                btn.addEventListener("click", () => {
+                  img.src = src;
+                  img.alt = `${tool.name}: ${label}`;
+                  link.href = src;
+                  strip.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+                });
+                strip.appendChild(btn);
+              });
+              media.push(strip);
+            }
+          } else {
+            media = el("div", { className: "placeholder" }, tool.placeholder[0], el("small", {}, tool.placeholder[1]));
+          }
+
+          const whoColor = tool.who === "全員" ? "#46c8a2" : "#e8b15a";
+          grid.appendChild(
+            el(
+              "div",
+              { className: "card" },
+              el("div", { className: "card-bar" }),
+              media,
+              el(
+                "div",
+                { className: "card-body" },
+                el(
+                  "h3",
+                  { className: "card-name" },
+                  tool.icon && el("img", { src: tool.icon, alt: "" }),
+                  el("span", { className: "glitch" }, tool.name)
+                ),
+                el("p", { className: "card-desc" }, tool.desc),
+                el(
+                  "div",
+                  { className: "card-meta" },
+                  el("span", {}, el("span", { className: "dot", style: `background:${whoColor}` }), tool.who),
+                  el("span", {}, tool.kind === "Tab" ? "P4Vタブ" : tool.customTool ? `${tool.app}の${tool.kind === "Tools menu" ? "Toolsメニュー" : "右クリックツール"}` : "P4V右クリックツール")
+                ),
+                el(
+                  "p",
+                  { className: "find" },
+                  el("strong", {}, "場所"),
+                  tool.find,
+                  tool.install &&
+                    el(
+                      "span",
+                      {},
+                      el("br"),
+                      el("strong", {}, "インストール"),
+                      tool.install.before,
+                      tool.install.links.flatMap(([href, label], i) => [
+                        i ? "または" : "",
+                        el("a", { href, download: true }, label),
+                      ]),
+                      tool.install.after
+                    )
+                )
+              )
+            )
+          );
+        }
+
+        // ---------- manual install ----------
+        const manual = document.getElementById("manualTools");
+        for (const tool of tools) {
+          const block = el(
+            "div",
+            { className: "manual-tool" },
+            el("h3", {}, tool.name, el("span", { className: "tag" }, tool.who))
+          );
+          const fields = el("dl", { className: "fields" });
+          for (const m of tool.manual || []) {
+            fields.append(el("div", { className: "os-label" }, m.type), ...field("URL", new URL(m.path, BASE).href, true).flat());
+            if (m.arg) fields.append(...field("引数", m.arg).flat());
+            if (m.size) fields.append(...field("ウィンドウサイズ", m.size).flat());
+            if (m.type === "HTML Window")
+              fields.append(...field("オプション", m.note || "Add to applicable context menus").flat());
+          }
+          block.appendChild(fields);
+          manual.appendChild(block);
+
+          if (tool.customTool) {
+            fetch(`../custom-tools/${tool.customTool}.json`)
+              .then((r) => r.json())
+              .then((def) => {
+                fields.append(
+                  ...field("追加方法", `${tool.app}のCustom Toolとして（Tools > Manage Tools > Custom Tools > New > Tool…）`).flat(),
+                  ...field("オプション", def.options.join(", ")).flat(),
+                  ...field(
+                    "注意",
+                    "Argumentsは引用符を付けず、表示どおりに貼り付けてください。base64でエンコードしたスクリプトが含まれています。"
+                  ).flat(),
+                  el("div", { className: "os-label" }, "Windows PC"),
+                  ...field("Application", def.windows.application, true).flat(),
+                  ...field("Arguments", def.windows.arguments, true).flat(),
+                  el("dt", {}, "ソース"),
+                  el("dd", { className: "plain" }, el("a", { href: `${REPO}/blob/main/${def.windows.source}` }, def.windows.source)),
+                  el("div", { className: "os-label" }, "Mac"),
+                  ...field("Application", def.macos.application, true).flat(),
+                  ...field("Arguments", def.macos.arguments, true).flat(),
+                  el("dt", {}, "ソース"),
+                  el("dd", { className: "plain" }, el("a", { href: `${REPO}/blob/main/${def.macos.source}` }, def.macos.source))
+                );
+              })
+              .catch((err) => {
+                fields.append(...field("エラー", `このツールの設定を読み込めませんでした: ${err.message}`).flat());
+              });
+          }
+        }
+
+        const team = document.getElementById("teamFields");
+        team.append(
+          ...field("タブ", `p4 property -a -n P4VJS.HTMLTabs -v ${new URL("../xml/p4v-tabs.xml", BASE).href}`, true).flat(),
+          ...field("右クリックツール", `p4 property -a -n P4VJS.HTMLWindows -v ${new URL("../xml/p4v-right-click-tools.xml", BASE).href}`, true).flat()
+        );
+
+        // Open the manual section when linked to directly.
+        const details = document.getElementById("manualDetails");
+        const openIfManual = () => {
+          if (location.hash === "#manual") details.open = true;
+        };
+        openIfManual();
+        window.addEventListener("hashchange", openIfManual);
+        document.querySelectorAll('a[href="#manual"]').forEach((a) =>
+          a.addEventListener("click", () => (details.open = true))
+        );
+      })();
+    </script>
+  </body>
+</html>
