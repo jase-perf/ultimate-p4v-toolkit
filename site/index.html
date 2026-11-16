@@ -871,8 +871,15 @@
                   </span>
                 </a>
               </div>
-              <div class="dl-group">For P4Admin (super users)</div>
+              <div class="dl-group">For P4Admin (admins)</div>
               <div class="downloads">
+                <a class="dl" href="xml/p4admin-tabs.xml" download>
+                  <span class="dl-arrow">↓</span>
+                  <span class="dl-text">
+                    <span class="dl-name glitch">p4admin-tabs.xml</span>
+                    <span class="dl-what">Typemap Editor and AI Help, as P4Admin tabs</span>
+                  </span>
+                </a>
                 <a class="dl" href="xml/p4admin-custom-tools-pc.xml" download>
                   <span class="dl-arrow">↓</span>
                   <span class="dl-text">
@@ -919,6 +926,11 @@
                   <strong>p4v-custom-tools-mac.xml</strong>: in P4V,
                   <span class="menu-path">Custom Tools</span>. Run it from the
                   <span class="menu-path">Tools</span> menu.
+                </li>
+                <li>
+                  <strong>p4admin-tabs.xml</strong>: in P4Admin,
+                  <span class="menu-path">HTML Tabs</span>. Open the tabs from
+                  the <span class="menu-path">View</span> menu.
                 </li>
                 <li>
                   <strong>p4admin-custom-tools-pc.xml</strong> or
@@ -1112,7 +1124,12 @@
             shots: [["screenshots/typemap.webp", "Editor"]],
             desc:
               "Edit the server's typemap in a table instead of a text file. It warns you when one rule overrides another, and has ready-made templates for game projects.",
-            find: "View > Typemap Editor (Admin)",
+            find: "View > Typemap Editor (Admin), in P4V or P4Admin",
+            install: {
+              before: "For P4Admin, import ",
+              links: [["xml/p4admin-tabs.xml", "p4admin-tabs.xml"]],
+              after: " under Manage Tools > HTML Tabs.",
+            },
             manual: [{ type: "HTML Tab", path: "tools/typemap/index.html" }],
           },
           {
@@ -1123,7 +1140,12 @@
             shots: [["screenshots/ai-help.webp", "Search"]],
             desc:
               "Ask a question about P4 in plain words and get an answer with links to the official documentation and knowledge base articles it came from.",
-            find: "View > AI Help",
+            find: "View > AI Help, in P4V or P4Admin",
+            install: {
+              before: "For P4Admin, import ",
+              links: [["xml/p4admin-tabs.xml", "p4admin-tabs.xml"]],
+              after: " under Manage Tools > HTML Tabs.",
+            },
             manual: [{ type: "HTML Tab", path: "tools/ai-help/index.html" }],
           },
           {

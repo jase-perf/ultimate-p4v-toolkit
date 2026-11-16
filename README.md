@@ -17,8 +17,8 @@ Work in progress.
 | [Revert Exclusive Checkouts](site/tools/revert-exclusive-checkouts/) | P4V HTML Window (P4Admin optional) | `%D`, `%F`, or `%r` (files or folders) | Admins and super users |
 | [Virtual Stream Utility](site/tools/virtual-stream-utility/) | P4V HTML Window | `%t` (a virtual stream) | Anyone who can edit the stream |
 | [Export .p4config](cli-tools/export-p4config/) | P4V Custom Tool (Windows PC or Mac) | `$p $c $u $r` (current workspace) | Everyone |
-| [Typemap Editor](site/tools/typemap/) | P4V HTML Tab | none | Admins and super users |
-| [AI Help](site/tools/ai-help/) | P4V HTML Tab | none | Everyone |
+| [Typemap Editor](site/tools/typemap/) | P4V and P4Admin HTML Tab | none | Admins and super users |
+| [AI Help](site/tools/ai-help/) | P4V and P4Admin HTML Tab | none | Everyone |
 
 ## Where your data goes
 
@@ -37,6 +37,7 @@ The file names never use "windows" for P4V's HTML Windows, so "Windows" below al
 | [`p4v-tabs.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4v-tabs.xml) | Active Files, Server Activity, Depot Size Map, Typemap Editor and AI Help, with tab icons | P4V: *Tools > Manage Tools > HTML Tabs > Import* |
 | [`p4v-right-click-tools.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4v-right-click-tools.xml) | Revert Exclusive Checkouts and Virtual Stream Utility | P4V: *Tools > Manage Tools > HTML Windows > Import* |
 | [`p4v-custom-tools-pc.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4v-custom-tools-pc.xml) / [`p4v-custom-tools-mac.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4v-custom-tools-mac.xml) | Export .p4config, for a Windows PC or a Mac | P4V: *Tools > Manage Tools > Custom Tools > Import* |
+| [`p4admin-tabs.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-tabs.xml) | Typemap Editor and AI Help, as P4Admin tabs | P4Admin: *Tools > Manage Tools > HTML Tabs > Import* |
 | [`p4admin-custom-tools-pc.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-custom-tools-pc.xml) / [`p4admin-custom-tools-mac.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-custom-tools-mac.xml) | Reset User Password, for a Windows PC or a Mac | P4Admin: *Tools > Manage Tools > Custom Tools > Import* |
 | [`p4admin-right-click-tools.xml`](https://jase.town/ultimate-p4v-toolkit/xml/p4admin-right-click-tools.xml) | Revert Exclusive Checkouts for P4Admin (optional) | P4Admin: *Tools > Manage Tools > HTML Windows > Import* |
 

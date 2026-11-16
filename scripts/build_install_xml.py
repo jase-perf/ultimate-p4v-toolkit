@@ -5,6 +5,7 @@ P4VJS.HTMLWindows at the URLs). File names avoid the word "windows" so it only
 ever means the operating system:
 
   p4v-tabs.xml                   P4V HTML Tabs (Manage Tools > HTML Tabs > Import)
+  p4admin-tabs.xml               P4Admin HTML Tabs (the same import, in P4Admin)
   p4v-right-click-tools.xml      P4V HTML Windows (Manage Tools > HTML Windows > Import)
   p4admin-right-click-tools.xml  The same for P4Admin (offered on the tool's card)
   p4v-custom-tools-pc.xml        P4V Custom Tools for Windows PCs
@@ -49,6 +50,9 @@ TABS = [
     ("AI Help", "tools/ai-help/index.html", "ai-help"),
 ]
 
+# Tabs also offered for P4Admin (by name). The same tab definitions work there.
+P4ADMIN_TABS = ["Typemap Editor (Admin)", "AI Help"]
+
 # Tools that need elevated access say so in their name, so people can untick
 # them in P4V's Import Preview.
 #
@@ -75,9 +79,11 @@ def menus(indent: str) -> str:
     return f"{indent}<HTMLContextMenus>\n{items}{indent}</HTMLContextMenus>\n"
 
 
-def tabs_xml() -> str:
+def tabs_xml(only: list[str] | None = None) -> str:
     parts = [HEADER, '<HtmlTabList varName="htmltablist">\n']
     for name, path, icon_name in TABS:
+        if only is not None and name not in only:
+            continue
         parts.append(
             "  <HtmlTab>\n"
             "    <Definition>\n"
@@ -151,6 +157,7 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     files = {
         "p4v-tabs.xml": tabs_xml(),
+        "p4admin-tabs.xml": tabs_xml(P4ADMIN_TABS),
         "p4v-right-click-tools.xml": windows_xml("p4v"),
         "p4admin-right-click-tools.xml": windows_xml("p4admin"),
         "p4v-custom-tools-pc.xml": custom_tools_xml("windows", P4V_CUSTOM_TOOLS),
