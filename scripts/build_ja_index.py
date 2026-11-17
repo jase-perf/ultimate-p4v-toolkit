@@ -34,7 +34,7 @@ PAIRS = [
     ),
     (
         'content="Free tools for P4V and P4Admin: live maps of who has what checked out, server activity trends, depot sizes and more. Import the tool files and they appear in P4V."',
-        'content="P4VとP4Admin用の無料ツール集。誰が何をチェックアウトしているかのライブマップ、サーバーのアクティビティ推移、デポのサイズなど。ツールファイルをインポートするだけでP4Vに表示されます。"',
+        'content="P4VとP4Admin用の無料ツール集。誰が何をチェックアウトしているかのライブマップ、サーバのアクティビティ推移、ディポのサイズなど。ツールファイルをインポートするだけでP4Vに表示されます。"',
         1,
     ),
     (
@@ -62,7 +62,7 @@ PAIRS = [
         """          New tabs and right-click tools for P4V and P4Admin. See who has what
           checked out, what's been changing across the server, and where all
           the space is going.""",
-        """          P4VとP4Adminに新しいタブと右クリックツールを追加します。誰が何をチェックアウトしているか、サーバー全体で何が変更されているか、容量がどこで使われているかがわかります。""",
+        """          P4VとP4Adminに新しいタブと右クリックツールを追加します。誰が何をチェックアウトしているか、サーバ全体で何が変更されているか、容量がどこで使われているかがわかります。""",
         1,
     ),
     (
@@ -70,7 +70,7 @@ PAIRS = [
           app to install and nothing to set up on the server. Import the tool
           files into P4V and they're ready to use, and they update by
           themselves whenever the toolkit does.""",
-        """          ツールはP4Vの中で、今お使いのログインのまま動作します。アプリのインストールもサーバー側の設定も必要ありません。ツールファイルをP4Vにインポートすればすぐに使え、ツールキットが更新されると自動的に最新版になります。""",
+        """          ツールはP4Vの中で、今お使いのログインのまま動作します。アプリのインストールもサーバ側の設定も必要ありません。ツールファイルをP4Vにインポートすればすぐに使え、ツールキットが更新されると自動的に最新版になります。""",
         1,
     ),
     # ---------- install ----------
@@ -146,7 +146,7 @@ PAIRS = [
                   for Virtual Stream Utility.""",
         """                  <strong>p4v-right-click-tools.xml</strong>：P4Vの
                   <span class="menu-path">HTML Windows</span>（別ウィンドウで開くツールのP4Vでの呼び名）に。ファイルやフォルダを右クリックするとRevert
-                  Exclusive Checkouts、仮想ストリームを右クリックするとVirtual Stream Utilityが使えます。""",
+                  Exclusive Checkouts、バーチャルストリームを右クリックするとVirtual Stream Utilityが使えます。""",
         1,
     ),
     (
@@ -176,14 +176,14 @@ PAIRS = [
                   user to use it.""",
         """                  <strong>p4admin-custom-tools-pc.xml</strong>または
                   <strong>p4admin-custom-tools-mac.xml</strong>：P4Adminの
-                  <span class="menu-path">Custom Tools</span>に。ユーザーを右クリックして使います。""",
+                  <span class="menu-path">Custom Tools</span>に。ユーザを右クリックして使います。""",
         1,
     ),
     (
         """                Before importing, P4V lists every tool in the file. Untick any
                 you don't want. Tools marked <em>(Admin)</em> only work for
                 admins and super users, so everyone else can leave them out.""",
-        """                インポートの前に、P4Vがファイル内のツールを一覧表示します。不要なものはチェックを外してください。<em>(Admin)</em>と付いたツールは管理者とスーパーユーザーしか使えないので、それ以外の方は外して構いません。""",
+        """                インポートの前に、P4Vがファイル内のツールを一覧表示します。不要なものはチェックを外してください。<em>(Admin)</em>と付いたツールは管理者とスーパーユーザしか使えないので、それ以外の方は外して構いません。""",
         1,
     ),
     (
@@ -201,7 +201,7 @@ PAIRS = [
           P4V the tabs and right-click tools at once, with no importing, by
           pointing P4V at the same files. See <a href="#manual">Manual install</a> below for the
           commands.""",
-        """          <strong>チームで使う場合：</strong>サーバー管理者がP4Vの参照先をこれらのファイルに設定すれば、インポートなしで全員にタブと右クリックツールを一度に配布できます。コマンドは下の<a href="#manual">手動インストール</a>をご覧ください。""",
+        """          <strong>チームで使う場合：</strong>サーバ管理者がP4Vの参照先をこれらのファイルに設定すれば、インポートなしで全員にタブと右クリックツールを一度に配布できます。コマンドは下の<a href="#manual">手動インストール</a>をご覧ください。""",
         1,
     ),
     # ---------- privacy ----------
@@ -211,7 +211,7 @@ PAIRS = [
           your login, and do all the sorting, adding up and drawing on your
           own computer. Nothing from your server is ever sent anywhere else.
           Server Activity's saved history stays on your computer too.""",
-        """          ツールはあなたのログインを使い、P4Vを通じてP4 Serverからデータを取得します。並べ替えや集計、描画はすべてお使いのコンピューター上で行われ、サーバーのデータが外部に送られることは一切ありません。Server Activityの履歴も、お使いのコンピューター内にだけ残ります。""",
+        """          ツールはあなたのログインを使い、P4Vを通じてP4 Serverからデータを取得します。並べ替えや集計、描画はすべてお使いのコンピュータ上で行われ、サーバのデータが外部に送られることは一切ありません。Server Activityの履歴も、お使いのコンピュータ内にだけ残ります。""",
         1,
     ),
     (
@@ -240,7 +240,7 @@ PAIRS = [
     ),
     (
         '<h3>Roll out to your whole P4V team <span class="tag">Server admins</span></h3>',
-        '<h3>P4Vチーム全体に配布する <span class="tag">サーバー管理者</span></h3>',
+        '<h3>P4Vチーム全体に配布する <span class="tag">サーバ管理者</span></h3>',
         1,
     ),
     (
@@ -249,9 +249,9 @@ PAIRS = [
                 imported in P4V, and Reset User Password in P4Admin.
                 If your server uses <code>P4VJS.HTMLAllowList</code>, add
                 <code>https://jase.town</code> to it.""",
-        """                各ユーザーが次回接続したときにP4Vに反映されます。対象はタブと右クリックツールのみなので、Export
+        """                各ユーザが次回接続したときにP4Vに反映されます。対象はタブと右クリックツールのみなので、Export
                 .p4configはP4Vで、Reset User PasswordはP4Adminで、引き続き個別にインポートしてください。
-                サーバーで<code>P4VJS.HTMLAllowList</code>を使っている場合は、<code>https://jase.town</code>を追加してください。""",
+                サーバで<code>P4VJS.HTMLAllowList</code>を使っている場合は、<code>https://jase.town</code>を追加してください。""",
         1,
     ),
     (
@@ -272,13 +272,13 @@ PAIRS = [
     # ---------- tool data (rendered by the script) ----------
     ('who: "Everyone",', 'who: "全員",', 6),
     ('who: "Admins",', 'who: "管理者",', 2),
-    ('who: "Super users",', 'who: "スーパーユーザー",', 1),
+    ('who: "Super users",', 'who: "スーパーユーザ",', 1),
     ('tool.who === "Everyone"', 'tool.who === "全員"', 1),
     ('"screenshots/project-activity.webp", "Map"]', '"screenshots/project-activity.webp", "マップ"]', 1),
     ('"screenshots/depot-size-map.webp", "Map"]', '"screenshots/depot-size-map.webp", "マップ"]', 1),
     ('"screenshots/server-activity.webp", "Trends"]', '"screenshots/server-activity.webp", "推移"]', 1),
     ('"screenshots/server-activity-calendar.webp", "Calendar"]', '"screenshots/server-activity-calendar.webp", "カレンダー"]', 1),
-    ('"screenshots/server-activity-people.webp", "People"]', '"screenshots/server-activity-people.webp", "ユーザー"]', 1),
+    ('"screenshots/server-activity-people.webp", "People"]', '"screenshots/server-activity-people.webp", "ユーザ"]', 1),
     ('.webp", "Window"]', '.webp", "ウィンドウ"]', 2),
     ('"screenshots/typemap.webp", "Editor"]', '"screenshots/typemap.webp", "エディタ"]', 1),
     ('"screenshots/ai-help.webp", "Search"]', '"screenshots/ai-help.webp", "検索"]', 1),
@@ -289,12 +289,12 @@ PAIRS = [
     ),
     (
         '"Who\'s working where, and what\'s been changing. Trends over time by person, folder or action, a calendar of activity for each stream, and a map of which folders have gone quiet. History is saved on your computer, so it\'s quick the next time."',
-        '"誰がどこで作業していて、何が変更されているか。ユーザー・フォルダ・操作別の推移、ストリームごとのアクティビティカレンダー、更新が止まったフォルダのマップを表示します。履歴はお使いのコンピューターに保存されるので、次回からはすばやく開けます。"',
+        '"誰がどこで作業していて、何が変更されているか。ユーザ・フォルダ・操作別の推移、ストリームごとのアクティビティカレンダー、更新が止まったフォルダのマップを表示します。履歴はお使いのコンピュータに保存されるので、次回からはすばやく開けます。"',
         1,
     ),
     (
         '"Find out where the space goes. Zoom through folders sized by how big they are, compare what a sync downloads with everything stored on the server, include shelved files, and find the biggest files. Opens quickly even on huge depots."',
-        '"容量がどこで使われているかを調べられます。サイズに応じた大きさで表示されるフォルダをズームしながらたどり、同期でダウンロードされる量とサーバーに保存されている全体を比較できます。シェルブされたファイルも含められ、最大のファイルも見つかります。巨大なデポでもすばやく開きます。"',
+        '"容量がどこで使われているかを調べられます。サイズに応じた大きさで表示されるフォルダをズームしながらたどり、同期でダウンロードされる量とサーバに保存されている全体を比較できます。保留されたファイルも含められ、最大のファイルも見つかります。巨大なディポでもすばやく開きます。"',
         1,
     ),
     (
@@ -304,12 +304,12 @@ PAIRS = [
     ),
     (
         '"Choose what a virtual stream shows by ticking folders and files in its parent, instead of writing its Paths by hand. It writes the shortest list of share and exclude lines, shows you the result before you save, and leaves wildcard lines it can\'t show untouched."',
-        '"仮想ストリームに何を含めるかを、Pathsを手で書く代わりに、親ストリームのフォルダやファイルにチェックを入れて選べます。shareとexcludeの行を最短のリストで書き出し、保存前に結果を確認でき、表示できないワイルドカード行はそのまま残します。"',
+        '"バーチャルストリームに何を含めるかを、Pathsを手で書く代わりに、親ストリームのフォルダやファイルにチェックを入れて選べます。shareとexcludeの行を最短のリストで書き出し、保存前に結果を確認でき、表示できないワイルドカード行はそのまま残します。"',
         1,
     ),
     (
         '"Edit the server\'s typemap in a table instead of a text file. It warns you when one rule overrides another, and has ready-made templates for game projects."',
-        '"サーバーのタイプマップを、テキストファイルではなく表で編集できます。ルール同士が上書きし合う場合は警告し、ゲームプロジェクト向けのテンプレートも用意されています。"',
+        '"サーバのタイプマップを、テキストファイルではなく表で編集できます。ルール同士が上書きし合う場合は警告し、ゲームプロジェクト向けのテンプレートも用意されています。"',
         1,
     ),
     (
@@ -319,12 +319,12 @@ PAIRS = [
     ),
     (
         '"Give someone a temporary password and make them choose a new one when they next log in. The message to send them is copied for you. Needs the p4 command-line client."',
-        '"ユーザーに一時パスワードを発行し、次回ログイン時に新しいパスワードを設定させます。本人に送るメッセージは自動でコピーされます。p4コマンドラインクライアントが必要です。"',
+        '"ユーザに一時パスワードを発行し、次回ログイン時に新しいパスワードを設定させます。本人に送るメッセージは自動でコピーされます。p4コマンドラインクライアントが必要です。"',
         1,
     ),
     (
         '"Save your current workspace\'s server, user and workspace name in a .p4config file at its root, so the p4 command line, game engines and other tools connect the same way P4V does inside that folder. It never overwrites an existing file."',
-        '"現在のワークスペースのサーバー、ユーザー、ワークスペース名を、そのルートの.p4configファイルに保存します。これでそのフォルダ内では、p4コマンドラインやゲームエンジンなどのツールがP4Vと同じ設定で接続できます。既存のファイルは上書きしません。"',
+        '"現在のワークスペースのサーバ、ユーザ、ワークスペース名を、そのルートの.p4configファイルに保存します。これでそのフォルダ内では、p4コマンドラインやゲームエンジンなどのツールがP4Vと同じ設定で接続できます。既存のファイルは上書きしません。"',
         1,
     ),
     ('find: "View > Active Files",', 'find: "View > Active Files",', 1),
@@ -335,7 +335,7 @@ PAIRS = [
     ),
     (
         'find: "In P4V, right-click a virtual stream > Virtual Stream Utility",',
-        'find: "P4Vで仮想ストリームを右クリック > Virtual Stream Utility",',
+        'find: "P4Vでバーチャルストリームを右クリック > Virtual Stream Utility",',
         1,
     ),
     (
@@ -346,7 +346,7 @@ PAIRS = [
     ('find: "View > AI Help, in P4V or P4Admin",', 'find: "View > AI Help（P4VまたはP4Admin）",', 1),
     (
         'find: "In P4Admin, right-click a user > Reset User Password (Super User)",',
-        'find: "P4Adminでユーザーを右クリック > Reset User Password (Super User)",',
+        'find: "P4Adminでユーザを右クリック > Reset User Password (Super User)",',
         1,
     ),
     ('find: "In P4V, Tools > Export .p4config",', 'find: "P4Vで Tools > Export .p4config",', 1),
@@ -381,7 +381,7 @@ PAIRS = [
     ),
     (
         'placeholder: ["RESET USER PASSWORD", "Right-click a user in P4Admin"],',
-        'placeholder: ["RESET USER PASSWORD", "P4Adminでユーザーを右クリック"],',
+        'placeholder: ["RESET USER PASSWORD", "P4Adminでユーザを右クリック"],',
         1,
     ),
     (

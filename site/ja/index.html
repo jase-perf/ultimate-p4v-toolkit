@@ -6,7 +6,7 @@
     <title>Ultimate P4V Toolkit（P4V・P4Admin用ツール集） | Jase Lindgren</title>
     <meta
       name="description"
-      content="P4VとP4Admin用の無料ツール集。誰が何をチェックアウトしているかのライブマップ、サーバーのアクティビティ推移、デポのサイズなど。ツールファイルをインポートするだけでP4Vに表示されます。"
+      content="P4VとP4Admin用の無料ツール集。誰が何をチェックアウトしているかのライブマップ、サーバのアクティビティ推移、ディポのサイズなど。ツールファイルをインポートするだけでP4Vに表示されます。"
     />
     <link rel="icon" type="image/png" href="../icons/project-activity.png" />
     <link rel="alternate" hreflang="en" href="/ultimate-p4v-toolkit/" />
@@ -824,10 +824,10 @@
     <div class="body">
       <div class="intro-wrap">
         <p class="intro">
-          P4VとP4Adminに新しいタブと右クリックツールを追加します。誰が何をチェックアウトしているか、サーバー全体で何が変更されているか、容量がどこで使われているかがわかります。
+          P4VとP4Adminに新しいタブと右クリックツールを追加します。誰が何をチェックアウトしているか、サーバ全体で何が変更されているか、容量がどこで使われているかがわかります。
         </p>
         <p class="intro">
-          ツールはP4Vの中で、今お使いのログインのまま動作します。アプリのインストールもサーバー側の設定も必要ありません。ツールファイルをP4Vにインポートすればすぐに使え、ツールキットが更新されると自動的に最新版になります。
+          ツールはP4Vの中で、今お使いのログインのまま動作します。アプリのインストールもサーバ側の設定も必要ありません。ツールファイルをP4Vにインポートすればすぐに使え、ツールキットが更新されると自動的に最新版になります。
         </p>
       </div>
 
@@ -917,7 +917,7 @@
                 <li>
                   <strong>p4v-right-click-tools.xml</strong>：P4Vの
                   <span class="menu-path">HTML Windows</span>（別ウィンドウで開くツールのP4Vでの呼び名）に。ファイルやフォルダを右クリックするとRevert
-                  Exclusive Checkouts、仮想ストリームを右クリックするとVirtual Stream Utilityが使えます。
+                  Exclusive Checkouts、バーチャルストリームを右クリックするとVirtual Stream Utilityが使えます。
                 </li>
                 <li>
                   <strong>p4v-custom-tools-pc.xml</strong>または
@@ -933,11 +933,11 @@
                 <li>
                   <strong>p4admin-custom-tools-pc.xml</strong>または
                   <strong>p4admin-custom-tools-mac.xml</strong>：P4Adminの
-                  <span class="menu-path">Custom Tools</span>に。ユーザーを右クリックして使います。
+                  <span class="menu-path">Custom Tools</span>に。ユーザを右クリックして使います。
                 </li>
               </ul>
               <p>
-                インポートの前に、P4Vがファイル内のツールを一覧表示します。不要なものはチェックを外してください。<em>(Admin)</em>と付いたツールは管理者とスーパーユーザーしか使えないので、それ以外の方は外して構いません。
+                インポートの前に、P4Vがファイル内のツールを一覧表示します。不要なものはチェックを外してください。<em>(Admin)</em>と付いたツールは管理者とスーパーユーザしか使えないので、それ以外の方は外して構いません。
               </p>
               <p>
                 ツールが読み込まれない場合は、
@@ -949,7 +949,7 @@
         </div>
 
         <p class="admin-note">
-          <strong>チームで使う場合：</strong>サーバー管理者がP4Vの参照先をこれらのファイルに設定すれば、インポートなしで全員にタブと右クリックツールを一度に配布できます。コマンドは下の<a href="#manual">手動インストール</a>をご覧ください。
+          <strong>チームで使う場合：</strong>サーバ管理者がP4Vの参照先をこれらのファイルに設定すれば、インポートなしで全員にタブと右クリックツールを一度に配布できます。コマンドは下の<a href="#manual">手動インストール</a>をご覧ください。
         </p>
       </section>
 
@@ -957,7 +957,7 @@
       <section class="section" id="privacy">
         <h2 class="section-title">データは外に出ません <span class="rule"></span></h2>
         <p class="section-lead">
-          ツールはあなたのログインを使い、P4Vを通じてP4 Serverからデータを取得します。並べ替えや集計、描画はすべてお使いのコンピューター上で行われ、サーバーのデータが外部に送られることは一切ありません。Server Activityの履歴も、お使いのコンピューター内にだけ残ります。
+          ツールはあなたのログインを使い、P4Vを通じてP4 Serverからデータを取得します。並べ替えや集計、描画はすべてお使いのコンピュータ上で行われ、サーバのデータが外部に送られることは一切ありません。Server Activityの履歴も、お使いのコンピュータ内にだけ残ります。
         </p>
         <p class="section-lead">
           唯一の例外は<strong>AI Help</strong>です。入力した質問を、回答を得るためにPerforce公式のAIサポートアシスタントへ送信します。
@@ -987,12 +987,12 @@
             <div id="manualTools"></div>
 
             <div class="manual-tool">
-              <h3>P4Vチーム全体に配布する <span class="tag">サーバー管理者</span></h3>
+              <h3>P4Vチーム全体に配布する <span class="tag">サーバ管理者</span></h3>
               <dl class="fields" id="teamFields"></dl>
               <p class="section-lead" style="margin: 10px 0 0; font-size: 12px">
-                各ユーザーが次回接続したときにP4Vに反映されます。対象はタブと右クリックツールのみなので、Export
+                各ユーザが次回接続したときにP4Vに反映されます。対象はタブと右クリックツールのみなので、Export
                 .p4configはP4Vで、Reset User PasswordはP4Adminで、引き続き個別にインポートしてください。
-                サーバーで<code>P4VJS.HTMLAllowList</code>を使っている場合は、<code>https://jase.town</code>を追加してください。
+                サーバで<code>P4VJS.HTMLAllowList</code>を使っている場合は、<code>https://jase.town</code>を追加してください。
               </p>
             </div>
 
@@ -1039,10 +1039,10 @@
             shots: [
               ["../screenshots/server-activity.webp", "推移"],
               ["../screenshots/server-activity-calendar.webp", "カレンダー"],
-              ["../screenshots/server-activity-people.webp", "ユーザー"],
+              ["../screenshots/server-activity-people.webp", "ユーザ"],
             ],
             desc:
-              "誰がどこで作業していて、何が変更されているか。ユーザー・フォルダ・操作別の推移、ストリームごとのアクティビティカレンダー、更新が止まったフォルダのマップを表示します。履歴はお使いのコンピューターに保存されるので、次回からはすばやく開けます。",
+              "誰がどこで作業していて、何が変更されているか。ユーザ・フォルダ・操作別の推移、ストリームごとのアクティビティカレンダー、更新が止まったフォルダのマップを表示します。履歴はお使いのコンピュータに保存されるので、次回からはすばやく開けます。",
             find: "View > Server Activity",
             manual: [{ type: "HTML Tab", path: "../tools/server-activity/index.html" }],
           },
@@ -1053,7 +1053,7 @@
             who: "全員",
             shots: [["../screenshots/depot-size-map.webp", "マップ"]],
             desc:
-              "容量がどこで使われているかを調べられます。サイズに応じた大きさで表示されるフォルダをズームしながらたどり、同期でダウンロードされる量とサーバーに保存されている全体を比較できます。シェルブされたファイルも含められ、最大のファイルも見つかります。巨大なデポでもすばやく開きます。",
+              "容量がどこで使われているかを調べられます。サイズに応じた大きさで表示されるフォルダをズームしながらたどり、同期でダウンロードされる量とサーバに保存されている全体を比較できます。保留されたファイルも含められ、最大のファイルも見つかります。巨大なディポでもすばやく開きます。",
             find: "View > Depot Size Map",
             manual: [{ type: "HTML Tab", path: "../tools/depot-size-map/index.html" }],
           },
@@ -1088,8 +1088,8 @@
             who: "全員",
             shots: [["../screenshots/virtual-stream-utility.webp", "ウィンドウ"]],
             desc:
-              "仮想ストリームに何を含めるかを、Pathsを手で書く代わりに、親ストリームのフォルダやファイルにチェックを入れて選べます。shareとexcludeの行を最短のリストで書き出し、保存前に結果を確認でき、表示できないワイルドカード行はそのまま残します。",
-            find: "P4Vで仮想ストリームを右クリック > Virtual Stream Utility",
+              "バーチャルストリームに何を含めるかを、Pathsを手で書く代わりに、親ストリームのフォルダやファイルにチェックを入れて選べます。shareとexcludeの行を最短のリストで書き出し、保存前に結果を確認でき、表示できないワイルドカード行はそのまま残します。",
+            find: "P4Vでバーチャルストリームを右クリック > Virtual Stream Utility",
             manual: [
               {
                 type: "HTML Window",
@@ -1107,7 +1107,7 @@
             who: "管理者",
             shots: [["../screenshots/typemap.webp", "エディタ"]],
             desc:
-              "サーバーのタイプマップを、テキストファイルではなく表で編集できます。ルール同士が上書きし合う場合は警告し、ゲームプロジェクト向けのテンプレートも用意されています。",
+              "サーバのタイプマップを、テキストファイルではなく表で編集できます。ルール同士が上書きし合う場合は警告し、ゲームプロジェクト向けのテンプレートも用意されています。",
             find: "View > Typemap Editor (Admin)（P4VまたはP4Admin）",
             install: {
               before: "P4Adminでは、",
@@ -1135,11 +1135,11 @@
           {
             name: "Reset User Password",
             kind: "Right-click",
-            who: "スーパーユーザー",
-            placeholder: ["RESET USER PASSWORD", "P4Adminでユーザーを右クリック"],
+            who: "スーパーユーザ",
+            placeholder: ["RESET USER PASSWORD", "P4Adminでユーザを右クリック"],
             desc:
-              "ユーザーに一時パスワードを発行し、次回ログイン時に新しいパスワードを設定させます。本人に送るメッセージは自動でコピーされます。p4コマンドラインクライアントが必要です。",
-            find: "P4Adminでユーザーを右クリック > Reset User Password (Super User)",
+              "ユーザに一時パスワードを発行し、次回ログイン時に新しいパスワードを設定させます。本人に送るメッセージは自動でコピーされます。p4コマンドラインクライアントが必要です。",
+            find: "P4Adminでユーザを右クリック > Reset User Password (Super User)",
             customTool: "reset-password",
             app: "P4Admin",
             install: {
@@ -1157,7 +1157,7 @@
             who: "全員",
             placeholder: ["EXPORT .P4CONFIG", "P4VのToolsメニュー"],
             desc:
-              "現在のワークスペースのサーバー、ユーザー、ワークスペース名を、そのルートの.p4configファイルに保存します。これでそのフォルダ内では、p4コマンドラインやゲームエンジンなどのツールがP4Vと同じ設定で接続できます。既存のファイルは上書きしません。",
+              "現在のワークスペースのサーバ、ユーザ、ワークスペース名を、そのルートの.p4configファイルに保存します。これでそのフォルダ内では、p4コマンドラインやゲームエンジンなどのツールがP4Vと同じ設定で接続できます。既存のファイルは上書きしません。",
             find: "P4Vで Tools > Export .p4config",
             customTool: "export-p4config",
             app: "P4V",
